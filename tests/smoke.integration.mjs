@@ -1,0 +1,222 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
+import { resolve } from 'node:path';
+import { test } from 'node:test';
+
+// API efêmera e isolada: não consulta nem altera o banco de dados real.
+test(
+  'Next.js em produção: páginas, sessão e operações via proxy',
+  { timeout: 60000 },
+  async () => {
+    const usuario = {
+      id: 1,
+      nome: 'Pessoa Teste',
+      login: 'teste',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const session = {
+      accessToken: 'smoke-access',
+      refreshToken: 'smoke-refresh',
+      tokenType: 'Bearer',
+      usuario,
+    };
+    const contas = [];
+    const formas = [];
+    const mock = createServer(async (req, res) => {
+      try {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const text = Buffer.concat(chunks).toString();
+        const body = text ? JSON.parse(text) : {};
+        let value = null;
+        let status = 200;
+        const [resource, id] = req.url.slice(1).split('/');
+        if (resource === 'auth' && ['login', 'registrar'].includes(id)) {
+          value = session;
+          status = id === 'registrar' ? 201 : 200;
+        } else if (req.url === '/auth/logout') {
+          status = 204;
+        } else {
+          assert.equal(req.headers.authorization, 'Bearer smoke-access');
+          if (req.url === '/auth/me') value = usuario;
+          else {
+            const collection = resource === 'contas' ? contas : formas;
+            if (!id && req.method === 'GET') value = collection;
+            if (!id && req.method === 'POST') {
+              value = {
+                id: crypto.randomUUID(),
+                ...body,
+                createdAt: new Date().toISOString(),
+                pago: false,
+                dataHoraPagamento: null,
+              };
+              collection.push(value);
+              status = 201;
+            }
+            if (id) {
+              const index = collection.findIndex((item) => item.id === id);
+              assert.notEqual(index, -1);
+              if (req.method === 'DELETE') {
+                value = collection.splice(index, 1)[0];
+                if (resource === 'contas') status = 204;
+              } else if (req.method === 'PATCH') {
+                Object.assign(collection[index], body);
+                value = collection[index];
+              } else if (req.method === 'POST') {
+                collection[index].pago = true;
+                status = 204;
+              } else value = collection[index];
+            }
+          }
+        }
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(status === 204 ? undefined : JSON.stringify(value));
+      } catch {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Falha no mock de teste' }));
+      }
+    });
+    mock.listen(0, '127.0.0.1');
+    await once(mock, 'listening');
+    const mockPort = mock.address().port;
+    const portProbe = createServer();
+    portProbe.listen(0, '127.0.0.1');
+    await once(portProbe, 'listening');
+    const port = portProbe.address().port;
+    await new Promise((done) => portProbe.close(done));
+    const base = `http://localhost:${port}`;
+    const child = spawn(
+      process.execPath,
+      [
+        resolve('node_modules/next/dist/bin/next'),
+        'start',
+        '--port',
+        String(port),
+        '--hostname',
+        '127.0.0.1',
+      ],
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          API_URL: `http://127.0.0.1:${mockPort}`,
+          NEXT_TELEMETRY_DISABLED: '1',
+        },
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    let logs = '';
+    child.stdout.on('data', (chunk) => {
+      logs += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      logs += chunk;
+    });
+
+    try {
+      let ready = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        try {
+          const response = await fetch(`${base}/login`);
+          if (response.ok) {
+            ready = true;
+            break;
+          }
+        } catch {
+          /* Aguarda o servidor de teste. */
+        }
+        if (child.exitCode !== null) break;
+        await new Promise((done) => setTimeout(done, 100));
+      }
+      assert.ok(ready, logs);
+      assert.equal((await fetch(`${base}/cadastro`)).status, 200);
+      const protectedPage = await fetch(`${base}/contas`, {
+        redirect: 'manual',
+      });
+      assert.equal(protectedPage.status, 307);
+      assert.equal(protectedPage.headers.get('location'), '/login');
+
+      const login = await fetch(`${base}/api/backend/auth/login`, {
+        method: 'POST',
+        headers: { Origin: base, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: 'teste', senha: 'senha-teste' }),
+      });
+      assert.equal(login.status, 200);
+      assert.deepEqual(await login.json(), usuario);
+      const cookie = login.headers
+        .getSetCookie()
+        .map((entry) => entry.split(';')[0])
+        .join('; ');
+      assert.match(cookie, /financas_refresh=smoke-refresh/);
+      const call = (path, method = 'GET', body) =>
+        fetch(`${base}/api/backend${path}`, {
+          method,
+          headers: {
+            Origin: base,
+            Cookie: cookie,
+            'Content-Type': 'application/json',
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+      assert.deepEqual(await (await call('/auth/me')).json(), usuario);
+      for (const path of ['/visao-geral', '/contas', '/formas-pagamento']) {
+        assert.equal(
+          (await fetch(`${base}${path}`, { headers: { Cookie: cookie } }))
+            .status,
+          200,
+        );
+      }
+      const created = await call('/contas', 'POST', {
+        nome: 'Internet',
+        valor: 129.9,
+      });
+      assert.equal(created.status, 201);
+      const conta = await created.json();
+      assert.equal((await (await call('/contas')).json()).length, 1);
+      assert.equal((await call(`/contas/${conta.id}`, 'POST')).status, 204);
+      assert.equal((await (await call('/contas')).json())[0].pago, true);
+      assert.equal((await call(`/contas/${conta.id}`, 'DELETE')).status, 204);
+      assert.deepEqual(await (await call('/contas')).json(), []);
+
+      // Regressão: acesso por IP não pode ser confundido com outra origem.
+      const ipBase = `http://127.0.0.1:${port}`;
+      const ipCreated = await fetch(`${ipBase}/api/backend/contas`, {
+        method: 'POST',
+        headers: {
+          Origin: ipBase,
+          Cookie: cookie,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nome: 'Conta pelo IP', valor: 75.5 }),
+      });
+      assert.equal(ipCreated.status, 201);
+      const ipConta = await ipCreated.json();
+      assert.equal(ipConta.nome, 'Conta pelo IP');
+      assert.equal((await call(`/contas/${ipConta.id}`, 'DELETE')).status, 204);
+
+      const method = await (
+        await call('/formas-pagamento', 'POST', { nome: 'Pix' })
+      ).json();
+      const changed = await call(`/formas-pagamento/${method.id}`, 'PATCH', {
+        nome: 'Pix pessoal',
+      });
+      assert.equal((await changed.json()).nome, 'Pix pessoal');
+      assert.equal(
+        (await call(`/formas-pagamento/${method.id}`, 'DELETE')).status,
+        200,
+      );
+      assert.deepEqual(await (await call('/formas-pagamento')).json(), []);
+      const logout = await call('/auth/logout', 'POST');
+      assert.equal(logout.status, 204);
+      assert.match(logout.headers.get('set-cookie'), /Max-Age=0/);
+    } finally {
+      child.kill();
+      mock.closeAllConnections();
+      await new Promise((done) => mock.close(done));
+    }
+  },
+);
