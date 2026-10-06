@@ -1,0 +1,53 @@
+# Finanças Web
+
+Front em Next.js (App Router), React e TypeScript para a API NestJS do projeto `financas-api`. Interface em português, responsiva e com dados reais da API.
+
+## Executar localmente
+
+Com Node.js 20.9 ou superior, instale e execute o front:
+
+```powershell
+cd C:\projetos\financas-web
+npm install
+npm run dev
+```
+
+Abra http://localhost:3001. Em outro terminal, mantenha a API em execução na porta 3000:
+
+```powershell
+cd C:\projetos\financas-api
+pnpm start:dev
+```
+
+O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço, crie `.env.local` na raiz de `financas-web` com `API_URL=https://endereco-da-api` (veja `.env.example`). Essa variável fica no servidor; não precisa habilitar CORS, pois o navegador faz as chamadas para o próprio Next.js.
+
+## Funcionalidades
+
+- Cadastro e login com os campos reais da API (`nome`, `login`, `senha`).
+- Sessão em cookies HttpOnly e renovação automática via `/auth/refresh`.
+- Logout com revogação do refresh token na API.
+- Visão geral com total de contas, valores em aberto, valores pagos e progresso por quantidade de contas.
+- Cadastro, busca, filtros, pagamento e exclusão de contas.
+- Cadastro, busca, edição e exclusão de formas de pagamento.
+- Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
+
+A API ainda não recebe `formaPagamentoId` no cadastro/pagamento de contas. Por isso, o front gerencia formas separadamente e não oferece uma associação que o backend não suporta. Também não há vencimentos, receitas ou recuperação de senha nos endpoints atuais.
+
+## Verificação e produção
+
+```powershell
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:smoke
+npm start
+```
+
+Em produção, use HTTPS: os cookies recebem `Secure` quando `NODE_ENV=production`. O serviço Next.js precisa alcançar `API_URL`.
+
+O proxy permite somente as rotas usadas pelo front, confere a origem das mutações, não expõe os tokens ao JavaScript e usa `no-store` para dados privados. A deduplicação de refresh é local ao processo; para operar múltiplas instâncias do Next.js, adote uma coordenação compartilhada da rotação de sessão.
+
+O front é um projeto independente em `financas-web`, com suas próprias dependências, configurações e lockfiles. A API fica no projeto `financas-api`.
+
+`test:smoke` precisa de um build prévio. Ele inicia uma API simulada e um Next.js em portas temporárias para verificar a integração HTTP sem tocar no banco real.
