@@ -7,9 +7,11 @@ import { api } from '@/lib/api';
 import type { Usuario } from '@/lib/types';
 import { Brand, Icon } from './icon';
 import { ErrorMessage } from './modal';
+import { useToast } from './toast-provider';
 
 export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +31,11 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           ...(register ? { nome: String(data.get('nome')).trim() } : {}),
         }),
       });
+      toast.success(
+        register
+          ? 'Sua conta foi criada com sucesso.'
+          : 'Bem-vindo! Login realizado com sucesso.',
+      );
       router.replace('/visao-geral');
       router.refresh();
     } catch (error) {

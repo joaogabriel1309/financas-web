@@ -8,15 +8,16 @@ import { dataCurta } from '@/lib/format';
 import { Icon } from './icon';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
 import { PageHeading } from './page-heading';
+import { useToast } from './toast-provider';
 
 export function PaymentMethods() {
+  const toast = useToast();
   const { data, setData, loading, error, reload } =
     useResource<FormaPagamento[]>('/formas-pagamento');
   const [editing, setEditing] = useState<FormaPagamento | 'new' | null>(null);
   const [deleting, setDeleting] = useState<FormaPagamento | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const filtered = (data || []).filter((method) =>
     method.nome
@@ -27,7 +28,6 @@ export function PaymentMethods() {
   function edit(method: FormaPagamento | 'new') {
     setEditing(method);
     setFormError(null);
-    setNotice(null);
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -56,7 +56,7 @@ export function PaymentMethods() {
           saved,
         ].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
       );
-      setNotice(
+      toast.success(
         editing === 'new'
           ? 'Forma de pagamento cadastrada.'
           : 'Forma de pagamento atualizada.',
@@ -83,7 +83,7 @@ export function PaymentMethods() {
         (previous) =>
           previous?.filter((method) => method.id !== deleting.id) || [],
       );
-      setNotice('Forma de pagamento excluída.');
+      toast.success('Forma de pagamento excluída.');
       setDeleting(null);
     } catch (error) {
       setFormError(
@@ -106,19 +106,6 @@ export function PaymentMethods() {
           Nova forma de pagamento
         </button>
       </PageHeading>
-      {notice && (
-        <div className="success-message" role="status">
-          <Icon name="check" size={18} />
-          {notice}
-          <button
-            className="icon-button"
-            aria-label="Dispensar aviso"
-            onClick={() => setNotice(null)}
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      )}
       <ErrorMessage message={error} />
       {error && (
         <button
@@ -171,7 +158,6 @@ export function PaymentMethods() {
                       onClick={() => {
                         setDeleting(method);
                         setFormError(null);
-                        setNotice(null);
                       }}
                     >
                       <Icon name="trash" size={17} />

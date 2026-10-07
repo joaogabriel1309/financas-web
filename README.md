@@ -34,6 +34,7 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Pagamento separado para cada mês; excluir remove a conta de todos os meses após confirmação.
 - Cadastro, busca, edição e exclusão de formas de pagamento.
 - Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
+- Notificações no canto superior direito com fechamento automático, barra de tempo e botão para dispensar. O prazo pausa ao passar o mouse ou focar o aviso; erros de formulário e de carregamento permanecem junto ao conteúdo para permitir correção e nova tentativa.
 
 A API ainda não recebe `formaPagamentoId` no cadastro/pagamento de contas. Por isso, o front gerencia formas separadamente e não oferece uma associação que o backend não suporta. Também não há vencimentos, receitas ou recuperação de senha nos endpoints atuais.
 

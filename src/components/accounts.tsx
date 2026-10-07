@@ -12,6 +12,7 @@ import { PageHeading } from './page-heading';
 import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
 import { MES_REGEX, rotuloMes } from '@/lib/months';
+import { useToast } from './toast-provider';
 
 type Action = { type: 'pay' | 'delete'; conta: Conta };
 
@@ -23,6 +24,7 @@ export function Accounts({
   initiallyOpen?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const { data, setData, loading, error, reload } = useResource<Conta[]>(
     `/contas?mes=${mes}`,
   );
@@ -30,7 +32,6 @@ export function Accounts({
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [tipoConta, setTipoConta] = useState('unica');
@@ -51,7 +52,6 @@ export function Accounts({
   function openAction(value: Action) {
     setAction(value);
     setFormError(null);
-    setNotice(null);
   }
 
   async function create(event: FormEvent<HTMLFormElement>) {
@@ -82,7 +82,6 @@ export function Accounts({
     }
     setBusy(true);
     setFormError(null);
-    setNotice(null);
     try {
       await api<Conta>('/contas', {
         method: 'POST',
@@ -96,7 +95,7 @@ export function Accounts({
       });
       await reload();
       closeCreate();
-      setNotice('Conta cadastrada com sucesso.');
+      toast.success('Conta cadastrada com sucesso.');
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : 'Não foi possível cadastrar.',
@@ -124,7 +123,7 @@ export function Accounts({
             previous?.filter((conta) => conta.id !== action.conta.id) || [],
         );
       else await reload();
-      setNotice(
+      toast.success(
         action.type === 'pay'
           ? 'Pagamento registrado com sucesso.'
           : 'Conta excluída.',
@@ -153,7 +152,6 @@ export function Accounts({
           onClick={() => {
             setCreating(true);
             setFormError(null);
-            setNotice(null);
             setTipoConta('unica');
           }}
         >
@@ -166,19 +164,6 @@ export function Accounts({
         pathname="/contas"
         disabled={busy || !!action || creating}
       />
-      {notice && (
-        <div className="success-message" role="status">
-          <Icon name="check" size={18} />
-          {notice}
-          <button
-            className="icon-button"
-            aria-label="Dispensar aviso"
-            onClick={() => setNotice(null)}
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      )}
       <ErrorMessage message={error} />
       {error && (
         <button

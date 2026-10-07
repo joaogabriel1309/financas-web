@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { iniciais } from '@/lib/format';
 import { useAuth } from './auth-provider';
 import { Brand, Icon, type IconName } from './icon';
+import { useToast } from './toast-provider';
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: '/visao-geral', label: 'Visão geral', icon: 'chart' },
@@ -15,17 +16,16 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const toast = useToast();
   const { usuario, logout } = useAuth();
   const [leaving, setLeaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function sair() {
     setLeaving(true);
-    setError(null);
     try {
       await logout();
     } catch (error) {
-      setError(
+      toast.error(
         error instanceof Error ? error.message : 'Não foi possível sair.',
       );
       setLeaving(false);
@@ -83,11 +83,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Icon name="logout" />
           </button>
         </div>
-        {error && (
-          <p className="sidebar-error" role="alert">
-            {error}
-          </p>
-        )}
       </aside>
       <div className="main-area">
         <header className="topbar">
