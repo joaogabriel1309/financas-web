@@ -7,7 +7,6 @@ import type { FormaPagamento } from '@/lib/types';
 import { dataCurta } from '@/lib/format';
 import { Icon } from './icon';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
-import { PageHeading } from './page-heading';
 import { useToast } from './toast-provider';
 
 export function PaymentMethods() {
@@ -96,16 +95,7 @@ export function PaymentMethods() {
 
   return (
     <>
-      <PageHeading
-        eyebrow="DO SEU JEITO"
-        title="Formas de pagamento"
-        description="Organize as maneiras que você usa para pagar."
-      >
-        <button className="button primary" onClick={() => edit('new')}>
-          <Icon name="plus" size={18} />
-          Nova forma de pagamento
-        </button>
-      </PageHeading>
+      <h1 className="sr-only">Formas de pagamento</h1>
       <ErrorMessage message={error} />
       {error && (
         <button
@@ -115,20 +105,31 @@ export function PaymentMethods() {
           Tentar novamente
         </button>
       )}
-      <div className="methods-toolbar">
+      <div className="methods-toolbar panel">
         <span className="muted">
           {data?.length || 0} forma{data?.length === 1 ? '' : 's'} de pagamento
         </span>
-        <label className="search-field">
-          <Icon name="search" size={18} />
-          <input
-            type="search"
-            placeholder="Buscar forma de pagamento…"
-            aria-label="Buscar forma de pagamento pelo nome"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
+        <div className="toolbar-actions">
+          <label className="search-field">
+            <Icon name="search" size={18} />
+            <input
+              type="search"
+              placeholder="Buscar forma de pagamento…"
+              aria-label="Buscar forma de pagamento pelo nome"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="button primary"
+            onClick={() => edit('new')}
+            disabled={busy}
+          >
+            <Icon name="plus" size={18} />
+            Nova forma de pagamento
+          </button>
+        </div>
       </div>
       {loading ? (
         <LoadingState />

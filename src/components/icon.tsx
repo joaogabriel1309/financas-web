@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type IconName =
+  | 'menu'
   | 'chart'
   | 'wallet'
   | 'card'
@@ -20,6 +21,7 @@ export type IconName =
   | 'refresh';
 
 const paths: Record<IconName, React.ReactNode> = {
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   chart: (
     <>
       <rect x="3" y="3" width="7" height="7" rx="2" />

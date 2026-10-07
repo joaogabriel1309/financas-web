@@ -8,7 +8,6 @@ import { moeda } from '@/lib/format';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
-import { PageHeading } from './page-heading';
 import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
 import { MES_REGEX, rotuloMes } from '@/lib/months';
@@ -227,34 +226,12 @@ export function Accounts({
 
   return (
     <>
-      <PageHeading
-        eyebrow="ORGANIZAÇÃO DO DIA A DIA"
-        title="Minhas contas"
-        description="Tudo o que você precisa pagar, em um só lugar."
-      >
-        <button
-          className="button primary"
-          disabled={busy || editingValueId !== null}
-          onClick={() => {
-            setCreating(true);
-            setFormError(null);
-            setTipoConta('unica');
-          }}
-        >
-          <Icon name="plus" size={18} />
-          Nova conta
-        </button>
-      </PageHeading>
+      <h1 className="sr-only">Minhas contas</h1>
       <MonthPicker
         mes={mes}
         pathname="/contas"
         disabled={busy || !!action || creating || editingValueId !== null}
       />
-      <p className="form-hint list-method-hint">
-        Troque a forma de pagamento diretamente na lista. A alteração é salva
-        automaticamente e vale para todos os meses e parcelas da conta. Para
-        alterar o valor, dê dois cliques nele.
-      </p>
       {!creating && formas.error && (
         <>
           <ErrorMessage message={`Formas de pagamento: ${formas.error}`} />
@@ -309,17 +286,32 @@ export function Accounts({
               </button>
             ))}
           </div>
-          <label className="search-field">
-            <Icon name="search" size={18} />
-            <input
-              type="search"
-              placeholder="Buscar uma conta…"
-              aria-label="Buscar conta pelo nome"
-              value={query}
+          <div className="toolbar-actions">
+            <label className="search-field">
+              <Icon name="search" size={18} />
+              <input
+                type="search"
+                placeholder="Buscar uma conta…"
+                aria-label="Buscar conta pelo nome"
+                value={query}
+                disabled={busy || editingValueId !== null}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="button primary"
               disabled={busy || editingValueId !== null}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
+              onClick={() => {
+                setCreating(true);
+                setFormError(null);
+                setTipoConta('unica');
+              }}
+            >
+              <Icon name="plus" size={18} />
+              Nova conta
+            </button>
+          </div>
         </div>
         {loading ? (
           <LoadingState />

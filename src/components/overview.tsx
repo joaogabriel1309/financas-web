@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from './auth-provider';
-import { PageHeading, StatCard } from './page-heading';
+import { StatCard } from './page-heading';
 import { useResource } from '@/lib/use-resource';
 import type { Conta } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
@@ -11,7 +10,6 @@ import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
 
 export function Overview({ mes }: { mes: string }) {
-  const { usuario } = useAuth();
   const {
     data: contas,
     loading,
@@ -32,16 +30,7 @@ export function Overview({ mes }: { mes: string }) {
 
   return (
     <>
-      <PageHeading
-        eyebrow="VISÃO GERAL"
-        title={`Olá, ${usuario.nome.split(' ')[0]}.`}
-        description="Um olhar simples para a sua vida financeira."
-      >
-        <Link href={`/contas?nova=1&mes=${mes}`} className="button primary">
-          <Icon name="plus" size={18} />
-          Nova conta
-        </Link>
-      </PageHeading>
+      <h1 className="sr-only">Visão geral</h1>
       <MonthPicker mes={mes} pathname="/visao-geral" />
       <ErrorMessage message={error} />
       {error && (
