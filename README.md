@@ -28,6 +28,10 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Logout com revogação do refresh token na API.
 - Visão geral com total de contas, valores em aberto, valores pagos e progresso por quantidade de contas.
 - Cadastro, busca, filtros, pagamento e exclusão de contas.
+- Navegação por mês nas contas e na visão geral, preservada na URL.
+- Recorrência mensal a partir do mês inicial e parcelas até a quantidade informada.
+- Valor por parcela e indicação da parcela atual (ex.: 2 de 6).
+- Pagamento separado para cada mês; excluir remove a conta de todos os meses após confirmação.
 - Cadastro, busca, edição e exclusão de formas de pagamento.
 - Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
 

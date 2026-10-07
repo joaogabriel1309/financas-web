@@ -18,7 +18,12 @@ export interface Conta {
   nome: string;
   valor: string | number;
   pago: boolean;
+  mes: string;
+  mesReferencia: string;
+  mesFim: string | null;
   recorrencia: boolean;
+  parcela: number;
+  parcelaAtual: number | null;
   dataHoraPagamento: string | null;
   createdAt: string;
   updatedAt: string;

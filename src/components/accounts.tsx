@@ -10,17 +10,22 @@ import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
 import { PageHeading } from './page-heading';
 import { Icon } from './icon';
+import { MonthPicker } from './month-picker';
+import { MES_REGEX, rotuloMes } from '@/lib/months';
 
 type Action = { type: 'pay' | 'delete'; conta: Conta };
 
 export function Accounts({
+  mes,
   initiallyOpen = false,
 }: {
+  mes: string;
   initiallyOpen?: boolean;
 }) {
   const router = useRouter();
-  const { data, setData, loading, error, reload } =
-    useResource<Conta[]>('/contas');
+  const { data, setData, loading, error, reload } = useResource<Conta[]>(
+    `/contas?mes=${mes}`,
+  );
   const [creating, setCreating] = useState(initiallyOpen);
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,6 +33,7 @@ export function Accounts({
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [tipoConta, setTipoConta] = useState('unica');
   const all = data || [];
   const filtered = all.filter(
     (conta) =>
@@ -40,7 +46,7 @@ export function Accounts({
   function closeCreate() {
     setCreating(false);
     setFormError(null);
-    if (initiallyOpen) router.replace('/contas', { scroll: false });
+    if (initiallyOpen) router.replace(`/contas?mes=${mes}`, { scroll: false });
   }
   function openAction(value: Action) {
     setAction(value);
@@ -54,9 +60,23 @@ export function Accounts({
     const form = new FormData(event.currentTarget);
     const nome = String(form.get('nome')).trim();
     const valor = Number(form.get('valor'));
+    const referencia = String(form.get('mes'));
+    const recorrencia = tipoConta === 'recorrente';
+    const parcela = tipoConta === 'parcelada' ? Number(form.get('parcela')) : 1;
     if (nome.length < 2 || !Number.isFinite(valor) || valor < 0) {
       setFormError(
         'Informe um nome com pelo menos 2 caracteres e um valor válido.',
+      );
+      return;
+    }
+    if (
+      !MES_REGEX.test(referencia) ||
+      !Number.isInteger(parcela) ||
+      parcela < 1 ||
+      parcela > 360
+    ) {
+      setFormError(
+        'Informe um mês válido e uma quantidade inteira de até 360 parcelas.',
       );
       return;
     }
@@ -64,11 +84,17 @@ export function Accounts({
     setFormError(null);
     setNotice(null);
     try {
-      const created = await api<Conta>('/contas', {
+      await api<Conta>('/contas', {
         method: 'POST',
-        body: JSON.stringify({ nome, valor, recorrencia: form.get('recorrencia') === 'on' }),
+        body: JSON.stringify({
+          nome,
+          valor,
+          mes: referencia,
+          recorrencia,
+          parcela,
+        }),
       });
-      setData((previous) => [created, ...(previous || [])]);
+      await reload();
       closeCreate();
       setNotice('Conta cadastrada com sucesso.');
     } catch (error) {
@@ -85,7 +111,10 @@ export function Accounts({
     setBusy(true);
     setFormError(null);
     try {
-      await api<void>(`/contas/${action.conta.id}`, {
+      const caminho =
+        `/contas/${action.conta.id}` +
+        (action.type === 'pay' ? `?mes=${action.conta.mes}` : '');
+      await api<void>(caminho, {
         method: action.type === 'pay' ? 'POST' : 'DELETE',
       });
       // Recarrega os dados para usar a data de pagamento registrada pelo servidor.
@@ -125,12 +154,18 @@ export function Accounts({
             setCreating(true);
             setFormError(null);
             setNotice(null);
+            setTipoConta('unica');
           }}
         >
           <Icon name="plus" size={18} />
           Nova conta
         </button>
       </PageHeading>
+      <MonthPicker
+        mes={mes}
+        pathname="/contas"
+        disabled={busy || !!action || creating}
+      />
       {notice && (
         <div className="success-message" role="status">
           <Icon name="check" size={18} />
@@ -211,12 +246,12 @@ export function Accounts({
               title={
                 all.length
                   ? 'Nenhuma conta encontrada'
-                  : 'Vamos organizar suas contas?'
+                  : 'Nenhuma conta neste mês'
               }
               description={
                 all.length
                   ? 'Tente outro nome ou altere o filtro para ver mais resultados.'
-                  : 'Adicione sua primeira conta e acompanhe cada pagamento.'
+                  : 'Adicione uma conta para este mês ou selecione outro mês de referência.'
               }
             >
               {!all.length && (
@@ -273,7 +308,9 @@ export function Accounts({
               />
             </label>
             <label>
-              Valor (R$)
+              {tipoConta === 'parcelada'
+                ? 'Valor de cada parcela (R$)'
+                : 'Valor mensal (R$)'}
               <input
                 name="valor"
                 type="number"
@@ -286,10 +323,70 @@ export function Accounts({
                 disabled={busy}
               />
             </label>
-            <label className="recurrence-field">
-              <input name="recorrencia" type="checkbox" disabled={busy} />
-              <span>Recorrência <small>Marcar esta conta como recorrente.</small></span>
+            <label>
+              {tipoConta === 'unica' ? 'Mês da conta' : 'Mês inicial'}
+              <input
+                name="mes"
+                type="month"
+                defaultValue={mes}
+                min="1900-01"
+                max="9999-12"
+                required
+                disabled={busy}
+              />
             </label>
+            <label className="recurrence-field">
+              <input
+                name="recorrencia"
+                type="checkbox"
+                disabled={busy}
+                checked={tipoConta === 'recorrente'}
+                onChange={(event) =>
+                  setTipoConta(event.target.checked ? 'recorrente' : 'unica')
+                }
+              />
+              <span>
+                Recorrência{' '}
+                <small>Aparece todos os meses a partir do mês inicial.</small>
+              </span>
+            </label>
+            <label className="recurrence-field">
+              <input
+                name="parcelado"
+                type="checkbox"
+                disabled={busy}
+                checked={tipoConta === 'parcelada'}
+                onChange={(event) =>
+                  setTipoConta(event.target.checked ? 'parcelada' : 'unica')
+                }
+              />
+              <span>
+                Parcelas <small>Uma parcela por mês até terminar.</small>
+              </span>
+            </label>
+            {tipoConta === 'parcelada' && (
+              <label>
+                Quantidade de parcelas
+                <input
+                  name="parcela"
+                  type="number"
+                  inputMode="numeric"
+                  min="2"
+                  max="360"
+                  step="1"
+                  defaultValue="2"
+                  required
+                  disabled={busy}
+                />
+              </label>
+            )}
+            <p className="form-hint">
+              {tipoConta === 'recorrente'
+                ? 'Cada mês tem seu próprio pagamento. Marcar recorrência desmarca parcelas.'
+                : tipoConta === 'parcelada'
+                  ? 'O valor informado é de cada parcela. Marcar parcelas desmarca recorrência.'
+                  : 'Esta conta aparece somente no mês escolhido.'}
+            </p>
             <ErrorMessage message={formError} />
             <div className="modal-actions">
               <button
@@ -316,8 +413,8 @@ export function Accounts({
           }
           description={
             action.type === 'pay'
-              ? `Confirme o pagamento de ${action.conta.nome} no valor de ${moeda(action.conta.valor)}.`
-              : `A conta “${action.conta.nome}” será excluída. Essa ação não pode ser desfeita.`
+              ? `Confirme o pagamento de ${action.conta.nome} em ${rotuloMes(action.conta.mes)}, no valor de ${moeda(action.conta.valor)}. Apenas este mês será marcado como pago.`
+              : `A conta “${action.conta.nome}” será excluída de todos os meses, incluindo parcelas e pagamentos registrados. Essa ação não pode ser desfeita.`
           }
           onClose={() => setAction(null)}
           busy={busy}

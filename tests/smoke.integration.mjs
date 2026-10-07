@@ -25,6 +25,7 @@ test(
     };
     const contas = [];
     const formas = [];
+    const pagamentos = new Map();
     const mock = createServer(async (req, res) => {
       try {
         const chunks = [];
@@ -33,7 +34,9 @@ test(
         const body = text ? JSON.parse(text) : {};
         let value = null;
         let status = 200;
-        const [resource, id] = req.url.slice(1).split('/');
+        const url = new URL(req.url, 'http://mock');
+        const [resource, id] = url.pathname.slice(1).split('/');
+        const mes = url.searchParams.get('mes');
         if (resource === 'auth' && ['login', 'registrar'].includes(id)) {
           value = session;
           status = id === 'registrar' ? 201 : 200;
@@ -44,7 +47,25 @@ test(
           if (req.url === '/auth/me') value = usuario;
           else {
             const collection = resource === 'contas' ? contas : formas;
-            if (!id && req.method === 'GET') value = collection;
+            if (!id && req.method === 'GET')
+              value =
+                resource === 'contas'
+                  ? collection
+                      .filter(
+                        (item) =>
+                          !mes ||
+                          item.recorrencia ||
+                          item.mesReferencia === mes,
+                      )
+                      .map((item) => ({
+                        ...item,
+                        mes: mes || item.mesReferencia,
+                        pago:
+                          pagamentos
+                            .get(item.id)
+                            ?.has(mes || item.mesReferencia) || false,
+                      }))
+                  : collection;
             if (!id && req.method === 'POST') {
               value = {
                 id: crypto.randomUUID(),
@@ -52,6 +73,11 @@ test(
                 createdAt: new Date().toISOString(),
                 pago: false,
                 dataHoraPagamento: null,
+                mesReferencia: body.mes || '2026-10',
+                mes: body.mes || '2026-10',
+                recorrencia: body.recorrencia || false,
+                parcela: body.parcela || 1,
+                parcelaAtual: body.recorrencia ? null : 1,
               };
               collection.push(value);
               status = 201;
@@ -66,7 +92,9 @@ test(
                 Object.assign(collection[index], body);
                 value = collection[index];
               } else if (req.method === 'POST') {
-                collection[index].pago = true;
+                const meses = pagamentos.get(id) || new Set();
+                meses.add(mes || collection[index].mesReferencia);
+                pagamentos.set(id, meses);
                 status = 204;
               } else value = collection[index];
             }
@@ -181,6 +209,36 @@ test(
       assert.equal((await (await call('/contas')).json())[0].pago, true);
       assert.equal((await call(`/contas/${conta.id}`, 'DELETE')).status, 204);
       assert.deepEqual(await (await call('/contas')).json(), []);
+
+      // Contrato mensal pelo Next em produção, sem dados no banco real.
+      const recorrente = await (
+        await call('/contas', 'POST', {
+          nome: 'Recorrente',
+          valor: 100,
+          mes: '2026-12',
+          recorrencia: true,
+          parcela: 1,
+        })
+      ).json();
+      const janeiro = await (await call('/contas?mes=2027-01')).json();
+      assert.equal(janeiro[0].mes, '2027-01');
+      assert.equal(janeiro[0].pago, false);
+      assert.equal(
+        (await call(`/contas/${recorrente.id}?mes=2027-01`, 'POST')).status,
+        204,
+      );
+      assert.equal(
+        (await (await call('/contas?mes=2027-01')).json())[0].pago,
+        true,
+      );
+      assert.equal(
+        (await (await call('/contas?mes=2027-02')).json())[0].pago,
+        false,
+      );
+      assert.equal(
+        (await call(`/contas/${recorrente.id}`, 'DELETE')).status,
+        204,
+      );
 
       // Regressão: acesso por IP não pode ser confundido com outra origem.
       const ipBase = `http://127.0.0.1:${port}`;

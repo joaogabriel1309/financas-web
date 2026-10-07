@@ -155,6 +155,17 @@ export async function handleBackend(request: NextRequest, path: string[]) {
     return json({ message: 'Origem da requisição não permitida.' }, 403);
   }
   const route = path.join('/');
+  const query = new URLSearchParams();
+  if (
+    path[0] === 'contas' &&
+    (method === 'GET' || (method === 'POST' && path.length === 2))
+  ) {
+    const meses = request.nextUrl.searchParams.getAll('mes');
+    if (meses.length > 1)
+      return json({ message: 'Informe somente um mês de referência.' }, 400);
+    if (meses.length === 1) query.set('mes', meses[0]);
+  }
+  const upstreamRoute = query.size ? `${route}?${query}` : route;
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
 
@@ -215,13 +226,18 @@ export async function handleBackend(request: NextRequest, path: string[]) {
     let renewed: Sessao | undefined;
     let response: Response;
     if (accessToken) {
-      response = await upstream(route, method, body, accessToken);
+      response = await upstream(upstreamRoute, method, body, accessToken);
     } else {
       response = new Response(null, { status: 401 });
     }
     if (response.status === 401 && refreshToken) {
       renewed = await refreshSession(refreshToken);
-      response = await upstream(route, method, body, renewed.accessToken);
+      response = await upstream(
+        upstreamRoute,
+        method,
+        body,
+        renewed.accessToken,
+      );
     }
     const result =
       response.status === 204

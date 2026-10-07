@@ -8,15 +8,16 @@ import type { Conta } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState } from './modal';
 import { Icon } from './icon';
+import { MonthPicker } from './month-picker';
 
-export function Overview() {
+export function Overview({ mes }: { mes: string }) {
   const { usuario } = useAuth();
   const {
     data: contas,
     loading,
     error,
     reload,
-  } = useResource<Conta[]>('/contas');
+  } = useResource<Conta[]>(`/contas?mes=${mes}`);
   const all = contas || [];
   const paid = all.filter((conta) => conta.pago);
   const pending = all.filter((conta) => !conta.pago);
@@ -36,11 +37,12 @@ export function Overview() {
         title={`Olá, ${usuario.nome.split(' ')[0]}.`}
         description="Um olhar simples para a sua vida financeira."
       >
-        <Link href="/contas?nova=1" className="button primary">
+        <Link href={`/contas?nova=1&mes=${mes}`} className="button primary">
           <Icon name="plus" size={18} />
           Nova conta
         </Link>
       </PageHeading>
+      <MonthPicker mes={mes} pathname="/visao-geral" />
       <ErrorMessage message={error} />
       {error && (
         <button
@@ -83,9 +85,9 @@ export function Overview() {
                 <div className="panel-heading">
                   <div>
                     <h2>Contas recentes</h2>
-                    <p>Os últimos registros do seu dia a dia.</p>
+                    <p>Os últimos registros do mês selecionado.</p>
                   </div>
-                  <Link href="/contas" className="text-link">
+                  <Link href={`/contas?mes=${mes}`} className="text-link">
                     Ver todas
                     <Icon name="arrow" size={17} />
                   </Link>
@@ -97,7 +99,10 @@ export function Overview() {
                     title="Seu novo começo está aqui"
                     description="Cadastre a primeira conta e acompanhe seus pagamentos em um só lugar."
                   >
-                    <Link className="button secondary" href="/contas?nova=1">
+                    <Link
+                      className="button secondary"
+                      href={`/contas?nova=1&mes=${mes}`}
+                    >
                       <Icon name="plus" size={17} />
                       Adicionar primeira conta
                     </Link>

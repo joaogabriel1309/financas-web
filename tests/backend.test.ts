@@ -27,6 +27,74 @@ const session = {
 };
 const uuid = '84933758-d41a-45cf-9116-62c2b7ccfb43';
 
+test('proxy preserva mês na listagem e no pagamento sem encaminhar parâmetros extras', async () => {
+  globalThis.fetch = async (input, options) => {
+    const url = new URL(String(input));
+    assert.equal(url.search, '?mes=2027-01');
+    assert.equal(
+      new Headers(options?.headers).get('authorization'),
+      'Bearer access-valido',
+    );
+    return options?.method === 'POST'
+      ? new Response(null, { status: 204 })
+      : Response.json([]);
+  };
+  assert.equal(
+    (
+      await handleBackend(
+        request('contas?mes=2027-01&ignorado=1', { access: 'access-valido' }),
+        ['contas'],
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await handleBackend(
+        request(`contas/${uuid}?mes=2027-01`, {
+          method: 'POST',
+          access: 'access-valido',
+        }),
+        ['contas', uuid],
+      )
+    ).status,
+    204,
+  );
+});
+
+test('renovar sessão preserva o mês da requisição original', async () => {
+  let chamadas = 0;
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith('/auth/refresh')) return Response.json(session);
+    assert.equal(new URL(String(input)).search, '?mes=2027-02');
+    chamadas++;
+    return new Headers(options?.headers).get('authorization') ===
+      'Bearer new-access'
+      ? Response.json([])
+      : Response.json({}, { status: 401 });
+  };
+  const response = await handleBackend(
+    request('contas?mes=2027-02', {
+      access: 'expired',
+      refresh: 'refresh-month',
+    }),
+    ['contas'],
+  );
+  assert.equal(response.status, 200);
+  assert.equal(chamadas, 2);
+});
+
+test('proxy rejeita mês duplicado antes de acessar a API', async () => {
+  globalThis.fetch = async () => {
+    assert.fail('Não deve consultar a API');
+  };
+  const response = await handleBackend(
+    request('contas?mes=2026-10&mes=2026-11', { access: 'access-valido' }),
+    ['contas'],
+  );
+  assert.equal(response.status, 400);
+});
+
 function request(
   path: string,
   options: {

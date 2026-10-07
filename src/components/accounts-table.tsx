@@ -3,6 +3,7 @@
 import { moeda, dataCurta } from '@/lib/format';
 import type { Conta } from '@/lib/types';
 import { Icon } from './icon';
+import { rotuloMes } from '@/lib/months';
 
 export function AccountsTable({
   contas,
@@ -22,7 +23,7 @@ export function AccountsTable({
         <thead>
           <tr>
             <th scope="col">CONTA</th>
-            <th scope="col">CADASTRADA EM</th>
+            <th scope="col">MÊS</th>
             <th scope="col">STATUS</th>
             <th scope="col" className="align-right">
               VALOR
@@ -44,6 +45,15 @@ export function AccountsTable({
                   </span>
                   <span>
                     <strong>{conta.nome}</strong>
+                    {conta.recorrencia ? (
+                      <small>Recorrência mensal</small>
+                    ) : (
+                      conta.parcela > 1 && (
+                        <small>
+                          Parcela {conta.parcelaAtual} de {conta.parcela}
+                        </small>
+                      )
+                    )}
                     {conta.dataHoraPagamento && (
                       <small>
                         Pago em {dataCurta(conta.dataHoraPagamento)}
@@ -52,7 +62,7 @@ export function AccountsTable({
                   </span>
                 </div>
               </td>
-              <td className="date-cell">{dataCurta(conta.createdAt)}</td>
+              <td className="date-cell">{rotuloMes(conta.mes)}</td>
               <td>
                 <span className={`badge ${conta.pago ? 'paid' : 'pending'}`}>
                   <span />

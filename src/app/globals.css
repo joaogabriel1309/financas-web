@@ -739,6 +739,44 @@ svg {
   align-items: center;
   gap: 7px;
 }
+.month-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.month-picker strong {
+  display: block;
+  margin-top: 5px;
+  text-transform: capitalize;
+}
+.month-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.month-controls input {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.previous-month svg {
+  transform: rotate(180deg);
+}
+.form-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
 .accounts-toolbar {
   display: flex;
   justify-content: space-between;
