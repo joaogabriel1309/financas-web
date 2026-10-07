@@ -3,7 +3,6 @@
 import { moeda, dataCurta } from '@/lib/format';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
-import { rotuloMes } from '@/lib/months';
 import {
   AccountValueDisplay,
   AccountValueEditor,
@@ -48,7 +47,6 @@ export function AccountsTable({
         <thead>
           <tr>
             <th scope="col">CONTA</th>
-            <th scope="col">MÊS</th>
             <th scope="col">FORMA DE PAGAMENTO</th>
             <th scope="col">STATUS</th>
             <th scope="col" className="align-right">
@@ -88,7 +86,6 @@ export function AccountsTable({
                   </span>
                 </div>
               </td>
-              <td className="date-cell">{rotuloMes(conta.mes)}</td>
               <td>
                 {onPaymentMethodChange ? (
                   <div className="table-method-field">
