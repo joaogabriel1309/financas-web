@@ -22,6 +22,8 @@ export function AccountsTable({
   onValueSave,
   onValueCancel,
   interactionsDisabled = false,
+  selectedIds = new Set<string>(),
+  onSelectionChange,
 }: {
   contas: Conta[];
   onPay?: (conta: Conta) => void;
@@ -39,13 +41,51 @@ export function AccountsTable({
   onValueSave?: (conta: Conta, valor: number) => Promise<boolean>;
   onValueCancel?: () => void;
   interactionsDisabled?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onSelectionChange?: (ids: string[]) => void;
 }) {
   const actions = !!onPay || !!onDelete;
+  const selectionDisabled = !!busyId || interactionsDisabled;
+  const allSelected =
+    contas.length > 0 && contas.every((conta) => selectedIds.has(conta.id));
+  const someSelected =
+    !allSelected && contas.some((conta) => selectedIds.has(conta.id));
+
+  function toggleSelection(id: string) {
+    if (!onSelectionChange || selectionDisabled) return;
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange([...next]);
+  }
   return (
     <div className="table-scroll">
       <table className="accounts-table">
         <thead>
           <tr>
+            {onSelectionChange && (
+              <th scope="col" className="selection-cell">
+                <input
+                  type="checkbox"
+                  className="account-selection-checkbox"
+                  aria-label="Selecionar todas as contas da lista"
+                  title="Selecionar todas as contas da lista"
+                  aria-checked={someSelected ? 'mixed' : allSelected}
+                  checked={allSelected}
+                  ref={(element) => {
+                    if (element) element.indeterminate = someSelected;
+                  }}
+                  disabled={selectionDisabled}
+                  onChange={(event) =>
+                    onSelectionChange(
+                      event.target.checked
+                        ? contas.map((conta) => conta.id)
+                        : [],
+                    )
+                  }
+                />
+              </th>
+            )}
             <th scope="col">CONTA</th>
             <th scope="col">FORMA DE PAGAMENTO</th>
             <th scope="col">STATUS</th>
@@ -61,7 +101,44 @@ export function AccountsTable({
         </thead>
         <tbody>
           {contas.map((conta) => (
-            <tr key={conta.id}>
+            <tr
+              key={conta.id}
+              className={
+                onSelectionChange
+                  ? `selectable-account-row ${selectedIds.has(conta.id) ? 'account-row-selected' : ''}`
+                  : undefined
+              }
+              aria-selected={
+                onSelectionChange ? selectedIds.has(conta.id) : undefined
+              }
+              onClick={
+                onSelectionChange
+                  ? (event) => {
+                      const target = event.target as HTMLElement;
+                      if (
+                        target.closest(
+                          'button, a, input, select, textarea, label, [role="button"]',
+                        )
+                      )
+                        return;
+                      toggleSelection(conta.id);
+                    }
+                  : undefined
+              }
+            >
+              {onSelectionChange && (
+                <td className="selection-cell">
+                  <input
+                    type="checkbox"
+                    className="account-selection-checkbox"
+                    aria-label={`Selecionar ${conta.nome}`}
+                    title={`Selecionar ${conta.nome}`}
+                    checked={selectedIds.has(conta.id)}
+                    disabled={selectionDisabled}
+                    onChange={() => toggleSelection(conta.id)}
+                  />
+                </td>
+              )}
               <td>
                 <div className="account-name">
                   <span className={`account-icon ${conta.pago ? 'paid' : ''}`}>

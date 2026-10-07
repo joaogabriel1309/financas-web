@@ -251,6 +251,61 @@ select:focus-visible {
 .accounts-table tbody tr:nth-child(even) {
   background: #f9f9fb;
 }
+.accounts-table .selection-cell {
+  width: 44px;
+  padding-left: 16px;
+  padding-right: 8px;
+  text-align: center;
+}
+.account-selection-checkbox {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.account-selection-checkbox:disabled {
+  cursor: not-allowed;
+}
+.selectable-account-row {
+  cursor: pointer;
+}
+.accounts-table tbody tr.account-row-selected td {
+  background: #e8f2ff;
+  border-bottom-color: #d1e3f9;
+}
+.accounts-table tbody tr.account-row-selected:hover td {
+  background: #dfedff;
+}
+.table-footer {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.selection-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 28px;
+}
+.selection-summary strong {
+  color: var(--green-dark);
+}
+.clear-account-selection {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 5px;
+  padding: 5px 7px;
+  background: transparent;
+  color: var(--green-dark);
+  font-size: 10px;
+}
+.clear-account-selection:hover:not(:disabled) {
+  background: var(--green-soft);
+}
 .accounts-table tr:hover td {
   background: #edf3fd;
 }

@@ -40,6 +40,7 @@ export function Accounts({
   const [formError, setFormError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [tipoConta, setTipoConta] = useState('unica');
   const [methodChange, setMethodChange] = useState<{
     id: string;
@@ -57,6 +58,14 @@ export function Accounts({
         .includes(query.toLocaleLowerCase('pt-BR')) &&
       (filter === 'all' || (filter === 'paid' ? conta.pago : !conta.pago)),
   );
+  const selectedAccounts = filtered.filter((conta) =>
+    selectedIds.has(conta.id),
+  );
+  const selectionTotal =
+    selectedAccounts.reduce(
+      (total, conta) => total + Math.round(Number(conta.valor) * 100),
+      0,
+    ) / 100;
 
   function closeCreate() {
     setCreating(false);
@@ -134,12 +143,17 @@ export function Accounts({
         method: action.type === 'pay' ? 'POST' : 'DELETE',
       });
       // Recarrega os dados para usar a data de pagamento registrada pelo servidor.
-      if (action.type === 'delete')
+      if (action.type === 'delete') {
         setData(
           (previous) =>
             previous?.filter((conta) => conta.id !== action.conta.id) || [],
         );
-      else await reload();
+        setSelectedIds((previous) => {
+          const next = new Set(previous);
+          next.delete(action.conta.id);
+          return next;
+        });
+      } else await reload();
       toast.success(
         action.type === 'pay'
           ? 'Pagamento registrado com sucesso.'
@@ -278,7 +292,10 @@ export function Accounts({
                 key={tab.id}
                 className={filter === tab.id ? 'selected' : ''}
                 disabled={busy || editingValueId !== null}
-                onClick={() => setFilter(tab.id)}
+                onClick={() => {
+                  setFilter(tab.id);
+                  setSelectedIds(new Set());
+                }}
                 aria-pressed={filter === tab.id}
               >
                 {tab.label}
@@ -295,7 +312,10 @@ export function Accounts({
                 aria-label="Buscar conta pelo nome"
                 value={query}
                 disabled={busy || editingValueId !== null}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setSelectedIds(new Set());
+                }}
               />
             </label>
             <button
@@ -320,6 +340,8 @@ export function Accounts({
           (filtered.length ? (
             <AccountsTable
               contas={filtered}
+              selectedIds={selectedIds}
+              onSelectionChange={(ids) => setSelectedIds(new Set(ids))}
               onPay={(conta) => openAction({ type: 'pay', conta })}
               onDelete={(conta) => openAction({ type: 'delete', conta })}
               busyId={
@@ -382,8 +404,32 @@ export function Accounts({
             <span>
               {filtered.length} conta{filtered.length === 1 ? '' : 's'}
             </span>
+            <div className="selection-summary">
+              <span role="status" aria-live="polite" aria-atomic="true">
+                {selectedAccounts.length ? (
+                  <>
+                    {selectedAccounts.length} selecionada
+                    {selectedAccounts.length === 1 ? '' : 's'} · Soma
+                    <strong>{moeda(selectionTotal)}</strong>
+                  </>
+                ) : (
+                  'Selecione contas para somar'
+                )}
+              </span>
+              {!!selectedAccounts.length && (
+                <button
+                  type="button"
+                  className="clear-account-selection"
+                  disabled={busy || editingValueId !== null}
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  <Icon name="close" size={13} />
+                  Limpar seleção
+                </button>
+              )}
+            </div>
             <span>
-              Total desta seleção{' '}
+              Total listado{' '}
               <strong>
                 {moeda(
                   filtered.reduce(
