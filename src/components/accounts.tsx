@@ -66,7 +66,7 @@ export function Accounts({
     try {
       const created = await api<Conta>('/contas', {
         method: 'POST',
-        body: JSON.stringify({ nome, valor }),
+        body: JSON.stringify({ nome, valor, recorrencia: form.get('recorrencia') === 'on' }),
       });
       setData((previous) => [created, ...(previous || [])]);
       closeCreate();
@@ -285,6 +285,10 @@ export function Accounts({
                 required
                 disabled={busy}
               />
+            </label>
+            <label className="recurrence-field">
+              <input name="recorrencia" type="checkbox" disabled={busy} />
+              <span>Recorrência <small>Marcar esta conta como recorrente.</small></span>
             </label>
             <ErrorMessage message={formError} />
             <div className="modal-actions">

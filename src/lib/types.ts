@@ -18,6 +18,7 @@ export interface Conta {
   nome: string;
   valor: string | number;
   pago: boolean;
+  recorrencia: boolean;
   dataHoraPagamento: string | null;
   createdAt: string;
   updatedAt: string;

@@ -1629,3 +1629,21 @@ svg {
     transition-duration: 0.01ms !important;
   }
 }
+
+.form-stack > .recurrence-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.form-stack .recurrence-field input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--green);
+}
+.recurrence-field small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+}
