@@ -23,7 +23,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const menu = useRef<HTMLDialogElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const currentPage = navigation.find((item) => item.href === pathname)?.label;
+  const currentSection = navigation.find(
+    (item) => item.href === pathname || pathname.startsWith(`${item.href}/`),
+  );
+  const currentPage =
+    pathname === '/contas/nova' ? 'Nova conta' : currentSection?.label;
 
   useEffect(() => {
     menu.current?.close();
@@ -110,13 +114,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`nav-link ${pathname === item.href ? 'active' : ''}`}
-                aria-current={pathname === item.href ? 'page' : undefined}
+                className={`nav-link ${currentSection?.href === item.href ? 'active' : ''}`}
+                aria-current={
+                  pathname === item.href
+                    ? 'page'
+                    : currentSection?.href === item.href
+                      ? 'location'
+                      : undefined
+                }
                 onClick={closeMenu}
               >
                 <Icon name={item.icon} />
                 <span>{item.label}</span>
-                {pathname === item.href && <span className="nav-active-dot" />}
+                {currentSection?.href === item.href && (
+                  <span className="nav-active-dot" />
+                )}
               </Link>
             ))}
           </nav>

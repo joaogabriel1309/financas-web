@@ -90,7 +90,7 @@ export function Overview({ mes }: { mes: string }) {
                   >
                     <Link
                       className="button secondary"
-                      href={`/contas?nova=1&mes=${mes}`}
+                      href={`/contas/nova?mes=${mes}`}
                     >
                       <Icon name="plus" size={17} />
                       Adicionar primeira conta

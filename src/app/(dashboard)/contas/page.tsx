@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Accounts } from '@/components/accounts';
 import { mesSelecionado } from '@/lib/months';
 
@@ -6,15 +7,10 @@ export const metadata: Metadata = { title: 'Minhas contas' };
 export default async function AccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nova?: string; mes?: string | string[] }>;
+  searchParams: Promise<{ nova?: string | string[]; mes?: string | string[] }>;
 }) {
   const { nova, mes: parametro } = await searchParams;
   const mes = mesSelecionado(parametro);
-  return (
-    <Accounts
-      key={`${mes}-${nova || 'list'}`}
-      mes={mes}
-      initiallyOpen={nova === '1'}
-    />
-  );
+  if (nova === '1') redirect(`/contas/nova?mes=${mes}`);
+  return <Accounts key={mes} mes={mes} />;
 }

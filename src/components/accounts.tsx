@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useResource } from '@/lib/use-resource';
@@ -10,11 +10,8 @@ import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
 import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
-import { MES_REGEX, rotuloMes } from '@/lib/months';
+import { rotuloMes } from '@/lib/months';
 import { useToast } from './toast-provider';
-import { PaymentMethodField } from './payment-method-field';
-import { AccountIconField } from './account-icon-field';
-import { obterIconeConta } from '@/lib/account-icons';
 import {
   aplicarFormaPagamento,
   salvarFormaPagamento,
@@ -23,19 +20,12 @@ import { aplicarValorConta, salvarValorConta } from '@/lib/account-value';
 
 type Action = { type: 'pay' | 'delete'; conta: Conta };
 
-export function Accounts({
-  mes,
-  initiallyOpen = false,
-}: {
-  mes: string;
-  initiallyOpen?: boolean;
-}) {
+export function Accounts({ mes }: { mes: string }) {
   const router = useRouter();
   const toast = useToast();
   const { data, setData, loading, error, reload } = useResource<Conta[]>(
     `/contas?mes=${mes}`,
   );
-  const [creating, setCreating] = useState(initiallyOpen);
   const formas = useResource<FormaPagamento[]>('/formas-pagamento');
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
@@ -43,7 +33,6 @@ export function Accounts({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-  const [tipoConta, setTipoConta] = useState('unica');
   const [methodChange, setMethodChange] = useState<{
     id: string;
     formaPagamentoId: string | null;
@@ -69,70 +58,9 @@ export function Accounts({
       0,
     ) / 100;
 
-  function closeCreate() {
-    setCreating(false);
-    setFormError(null);
-    if (initiallyOpen) router.replace(`/contas?mes=${mes}`, { scroll: false });
-  }
   function openAction(value: Action) {
     setAction(value);
     setFormError(null);
-  }
-
-  async function create(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy) return;
-    const form = new FormData(event.currentTarget);
-    const nome = String(form.get('nome')).trim();
-    const icone = obterIconeConta(form.get('icone'));
-    const valor = Number(form.get('valor'));
-    const referencia = String(form.get('mes'));
-    const recorrencia = tipoConta === 'recorrente';
-    const parcela = tipoConta === 'parcelada' ? Number(form.get('parcela')) : 1;
-    const formaPagamentoId =
-      String(form.get('formaPagamentoId') || '').trim() || null;
-    if (nome.length < 2 || !Number.isFinite(valor) || valor < 0) {
-      setFormError(
-        'Informe um nome com pelo menos 2 caracteres e um valor válido.',
-      );
-      return;
-    }
-    if (
-      !MES_REGEX.test(referencia) ||
-      !Number.isInteger(parcela) ||
-      parcela < 1 ||
-      parcela > 360
-    ) {
-      setFormError(
-        'Informe um mês válido e uma quantidade inteira de até 360 parcelas.',
-      );
-      return;
-    }
-    setBusy(true);
-    setFormError(null);
-    try {
-      await api<Conta>('/contas', {
-        method: 'POST',
-        body: JSON.stringify({
-          nome,
-          icone,
-          valor,
-          mes: referencia,
-          recorrencia,
-          parcela,
-          formaPagamentoId,
-        }),
-      });
-      await reload();
-      closeCreate();
-      toast.success('Conta cadastrada com sucesso.');
-    } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : 'Não foi possível cadastrar.',
-      );
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function confirm() {
@@ -181,7 +109,6 @@ export function Accounts({
   ) {
     if (
       busy ||
-      creating ||
       action ||
       changingMethod.current ||
       editingValueId !== null ||
@@ -248,9 +175,9 @@ export function Accounts({
       <MonthPicker
         mes={mes}
         pathname="/contas"
-        disabled={busy || !!action || creating || editingValueId !== null}
+        disabled={busy || !!action || editingValueId !== null}
       />
-      {!creating && formas.error && (
+      {formas.error && (
         <>
           <ErrorMessage message={`Formas de pagamento: ${formas.error}`} />
           <button
@@ -326,11 +253,7 @@ export function Accounts({
               type="button"
               className="button primary"
               disabled={busy || editingValueId !== null}
-              onClick={() => {
-                setCreating(true);
-                setFormError(null);
-                setTipoConta('unica');
-              }}
+              onClick={() => router.push(`/contas/nova?mes=${mes}`)}
             >
               <Icon name="plus" size={18} />
               Nova conta
@@ -358,21 +281,19 @@ export function Accounts({
                 void changePaymentMethod(conta, formaPagamentoId)
               }
               methodSelectionDisabled={
-                busy || creating || !!action || formas.loading || !!formas.error
+                busy || !!action || formas.loading || !!formas.error
               }
               pendingPaymentMethod={methodChange}
               editingValueId={editingValueId}
               onValueEdit={(conta) => {
-                if (!busy && !creating && !action && editingValueId === null)
+                if (!busy && !action && editingValueId === null)
                   setEditingValueId(conta.id);
               }}
               onValueCancel={() => {
                 if (!busy) setEditingValueId(null);
               }}
               onValueSave={changeValue}
-              interactionsDisabled={
-                busy || creating || !!action || editingValueId !== null
-              }
+              interactionsDisabled={busy || !!action || editingValueId !== null}
             />
           ) : (
             <EmptyState
@@ -391,10 +312,7 @@ export function Accounts({
                 <button
                   className="button secondary"
                   disabled={busy || editingValueId !== null}
-                  onClick={() => {
-                    setCreating(true);
-                    setFormError(null);
-                  }}
+                  onClick={() => router.push(`/contas/nova?mes=${mes}`)}
                 >
                   <Icon name="plus" size={17} />
                   Adicionar primeira conta
@@ -446,130 +364,6 @@ export function Accounts({
           </div>
         )}
       </section>
-      {creating && (
-        <Modal
-          title="Nova conta"
-          description="Registre o que você precisa pagar. Simples assim."
-          onClose={closeCreate}
-          busy={busy}
-        >
-          <form className="form-stack" onSubmit={create}>
-            <label>
-              Nome da conta
-              <input
-                name="nome"
-                placeholder="Ex.: Internet de casa"
-                minLength={2}
-                maxLength={100}
-                required
-                disabled={busy}
-              />
-            </label>
-            <AccountIconField busy={busy} />
-            <label>
-              {tipoConta === 'parcelada'
-                ? 'Valor de cada parcela (R$)'
-                : 'Valor mensal (R$)'}
-              <input
-                name="valor"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                max="9999999999999.99"
-                step="0.01"
-                placeholder="0,00"
-                required
-                disabled={busy}
-              />
-            </label>
-            <label>
-              {tipoConta === 'unica' ? 'Mês da conta' : 'Mês inicial'}
-              <input
-                name="mes"
-                type="month"
-                defaultValue={mes}
-                min="1900-01"
-                max="9999-12"
-                required
-                disabled={busy}
-              />
-            </label>
-            <label className="recurrence-field">
-              <input
-                name="recorrencia"
-                type="checkbox"
-                disabled={busy}
-                checked={tipoConta === 'recorrente'}
-                onChange={(event) =>
-                  setTipoConta(event.target.checked ? 'recorrente' : 'unica')
-                }
-              />
-              <span>
-                Recorrência{' '}
-                <small>Aparece todos os meses a partir do mês inicial.</small>
-              </span>
-            </label>
-            <label className="recurrence-field">
-              <input
-                name="parcelado"
-                type="checkbox"
-                disabled={busy}
-                checked={tipoConta === 'parcelada'}
-                onChange={(event) =>
-                  setTipoConta(event.target.checked ? 'parcelada' : 'unica')
-                }
-              />
-              <span>
-                Parcelas <small>Uma parcela por mês até terminar.</small>
-              </span>
-            </label>
-            {tipoConta === 'parcelada' && (
-              <label>
-                Quantidade de parcelas
-                <input
-                  name="parcela"
-                  type="number"
-                  inputMode="numeric"
-                  min="2"
-                  max="360"
-                  step="1"
-                  defaultValue="2"
-                  required
-                  disabled={busy}
-                />
-              </label>
-            )}
-            <PaymentMethodField
-              methods={formas.data}
-              loading={formas.loading}
-              error={formas.error}
-              busy={busy}
-              onRetry={() => void formas.reload()}
-            />
-            <p className="form-hint">
-              {tipoConta === 'recorrente'
-                ? 'Cada mês tem seu próprio pagamento. Marcar recorrência desmarca parcelas.'
-                : tipoConta === 'parcelada'
-                  ? 'O valor informado é de cada parcela. Marcar parcelas desmarca recorrência.'
-                  : 'Esta conta aparece somente no mês escolhido.'}
-            </p>
-            <ErrorMessage message={formError} />
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                onClick={closeCreate}
-                disabled={busy}
-              >
-                Cancelar
-              </button>
-              <button className="button primary" disabled={busy}>
-                {busy ? 'Salvando…' : 'Cadastrar conta'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
       {action && (
         <Modal
           title={

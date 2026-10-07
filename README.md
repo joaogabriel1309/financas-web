@@ -27,7 +27,9 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Sessão em cookies HttpOnly e renovação automática via `/auth/refresh`.
 - Logout com revogação do refresh token na API.
 - Visão geral com total de contas, valores em aberto, valores pagos e progresso por quantidade de contas.
-- Cadastro, busca, filtros, pagamento e exclusão de contas.
+- Cadastro de conta em página própria (`/contas/nova`), preservando o mês da listagem e retornando às contas após salvar ou cancelar. O endereço antigo `/contas?nova=1` redireciona para a nova tela.
+- Seleção de ícones no cadastro, incluindo moto, gasolina, empréstimo e plano de saúde, com exibição nas contas de todos os meses e parcelas.
+- Busca, filtros, pagamento e exclusão de contas.
 - Navegação por mês nas contas e na visão geral, preservada na URL.
 - Recorrência mensal a partir do mês inicial e parcelas até a quantidade informada.
 - Valor por parcela e indicação da parcela atual (ex.: 2 de 6).
