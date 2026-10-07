@@ -134,6 +134,13 @@ function sameOrigin(request: NextRequest): boolean {
 
 function allowed(path: string[], method: string) {
   const [resource, id] = path;
+  if (path.length === 3)
+    return (
+      resource === 'contas' &&
+      UUID.test(id) &&
+      path[2] === 'valor' &&
+      method === 'PATCH'
+    );
   if (path.length === 2 && resource === 'auth') {
     return id === 'me'
       ? method === 'GET'

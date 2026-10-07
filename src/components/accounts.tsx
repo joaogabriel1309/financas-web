@@ -18,6 +18,7 @@ import {
   aplicarFormaPagamento,
   salvarFormaPagamento,
 } from '@/lib/account-payment-method';
+import { aplicarValorConta, salvarValorConta } from '@/lib/account-value';
 
 type Action = { type: 'pay' | 'delete'; conta: Conta };
 
@@ -46,6 +47,9 @@ export function Accounts({
     formaPagamentoId: string | null;
   } | null>(null);
   const changingMethod = useRef(false);
+  const [editingValueId, setEditingValueId] = useState<string | null>(null);
+  const [savingValueId, setSavingValueId] = useState<string | null>(null);
+  const savingValue = useRef(false);
   const all = data || [];
   const filtered = all.filter(
     (conta) =>
@@ -163,6 +167,7 @@ export function Accounts({
       creating ||
       action ||
       changingMethod.current ||
+      editingValueId !== null ||
       conta.formaPagamentoId === formaPagamentoId
     )
       return;
@@ -190,6 +195,36 @@ export function Accounts({
     }
   }
 
+  async function changeValue(conta: Conta, valor: number): Promise<boolean> {
+    if (busy || savingValue.current || editingValueId !== conta.id)
+      return false;
+    if (Number(conta.valor) === valor) {
+      setEditingValueId(null);
+      return true;
+    }
+    savingValue.current = true;
+    setBusy(true);
+    setSavingValueId(conta.id);
+    try {
+      const atualizado = await salvarValorConta(conta.id, valor);
+      setData((previous) => aplicarValorConta(previous, atualizado));
+      setEditingValueId(null);
+      toast.success('Valor da conta atualizado.');
+      return true;
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível alterar o valor.',
+      );
+      return false;
+    } finally {
+      savingValue.current = false;
+      setBusy(false);
+      setSavingValueId(null);
+    }
+  }
+
   return (
     <>
       <PageHeading
@@ -199,7 +234,7 @@ export function Accounts({
       >
         <button
           className="button primary"
-          disabled={busy}
+          disabled={busy || editingValueId !== null}
           onClick={() => {
             setCreating(true);
             setFormError(null);
@@ -213,11 +248,12 @@ export function Accounts({
       <MonthPicker
         mes={mes}
         pathname="/contas"
-        disabled={busy || !!action || creating}
+        disabled={busy || !!action || creating || editingValueId !== null}
       />
       <p className="form-hint list-method-hint">
         Troque a forma de pagamento diretamente na lista. A alteração é salva
-        automaticamente e vale para todos os meses e parcelas da conta.
+        automaticamente e vale para todos os meses e parcelas da conta. Para
+        alterar o valor, dê dois cliques nele.
       </p>
       {!creating && formas.error && (
         <>
@@ -235,6 +271,7 @@ export function Accounts({
       {error && (
         <button
           className="button secondary retry-button"
+          disabled={busy || editingValueId !== null}
           onClick={() => void reload()}
         >
           Tentar novamente
@@ -263,6 +300,7 @@ export function Accounts({
               <button
                 key={tab.id}
                 className={filter === tab.id ? 'selected' : ''}
+                disabled={busy || editingValueId !== null}
                 onClick={() => setFilter(tab.id)}
                 aria-pressed={filter === tab.id}
               >
@@ -278,6 +316,7 @@ export function Accounts({
               placeholder="Buscar uma conta…"
               aria-label="Buscar conta pelo nome"
               value={query}
+              disabled={busy || editingValueId !== null}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
@@ -291,7 +330,11 @@ export function Accounts({
               contas={filtered}
               onPay={(conta) => openAction({ type: 'pay', conta })}
               onDelete={(conta) => openAction({ type: 'delete', conta })}
-              busyId={busy ? action?.conta.id || methodChange?.id : null}
+              busyId={
+                busy
+                  ? action?.conta.id || methodChange?.id || savingValueId
+                  : null
+              }
               paymentMethods={formas.data || []}
               onPaymentMethodChange={(conta, formaPagamentoId) =>
                 void changePaymentMethod(conta, formaPagamentoId)
@@ -300,6 +343,18 @@ export function Accounts({
                 busy || creating || !!action || formas.loading || !!formas.error
               }
               pendingPaymentMethod={methodChange}
+              editingValueId={editingValueId}
+              onValueEdit={(conta) => {
+                if (!busy && !creating && !action && editingValueId === null)
+                  setEditingValueId(conta.id);
+              }}
+              onValueCancel={() => {
+                if (!busy) setEditingValueId(null);
+              }}
+              onValueSave={changeValue}
+              interactionsDisabled={
+                busy || creating || !!action || editingValueId !== null
+              }
             />
           ) : (
             <EmptyState
@@ -317,7 +372,7 @@ export function Accounts({
               {!all.length && (
                 <button
                   className="button secondary"
-                  disabled={busy}
+                  disabled={busy || editingValueId !== null}
                   onClick={() => {
                     setCreating(true);
                     setFormError(null);

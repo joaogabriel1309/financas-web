@@ -47,7 +47,7 @@ test(
         let value = null;
         let status = 200;
         const url = new URL(req.url, 'http://mock');
-        const [resource, id] = url.pathname.slice(1).split('/');
+        const [resource, id, subresource] = url.pathname.slice(1).split('/');
         const mes = url.searchParams.get('mes');
         if (resource === 'auth' && ['login', 'registrar'].includes(id)) {
           value = session;
@@ -105,11 +105,14 @@ test(
                 value = collection[index];
                 if (resource === 'contas') {
                   const conta = apresentarConta(value, mes);
-                  value = {
-                    id: conta.id,
-                    formaPagamentoId: conta.formaPagamentoId,
-                    formaPagamento: conta.formaPagamento,
-                  };
+                  value =
+                    subresource === 'valor'
+                      ? { id: conta.id, valor: conta.valor }
+                      : {
+                          id: conta.id,
+                          formaPagamentoId: conta.formaPagamentoId,
+                          formaPagamento: conta.formaPagamento,
+                        };
                 }
               } else if (req.method === 'POST') {
                 const meses = pagamentos.get(id) || new Set();
@@ -308,6 +311,20 @@ test(
       const outraForma = await (
         await call('/formas-pagamento', 'POST', { nome: 'Cartão' })
       ).json();
+      const novoValor = await call(
+        `/contas/${contaVinculada.id}/valor`,
+        'PATCH',
+        { valor: 149.9 },
+      );
+      assert.equal(novoValor.status, 200);
+      assert.deepEqual(await novoValor.json(), {
+        id: contaVinculada.id,
+        valor: 149.9,
+      });
+      const [aposValor] = await (await call('/contas?mes=2027-01')).json();
+      assert.equal(aposValor.valor, 149.9);
+      assert.equal(aposValor.pago, true);
+      assert.equal(aposValor.formaPagamentoId, method.id);
       const alterada = await call(`/contas/${contaVinculada.id}`, 'PATCH', {
         formaPagamentoId: outraForma.id,
       });

@@ -27,6 +27,71 @@ const session = {
 };
 const uuid = '84933758-d41a-45cf-9116-62c2b7ccfb43';
 
+test('proxy encaminha somente PATCH da subrota valor autenticado', async () => {
+  globalThis.fetch = async (input, options) => {
+    assert.equal(new URL(String(input)).pathname, `/contas/${uuid}/valor`);
+    assert.equal(new URL(String(input)).search, '');
+    assert.equal(options?.method, 'PATCH');
+    assert.deepEqual(JSON.parse(options?.body as string), { valor: 149.9 });
+    return Response.json({ id: uuid, valor: '149.90' });
+  };
+  const response = await handleBackend(
+    request(`contas/${uuid}/valor?mes=2026-10`, {
+      method: 'PATCH',
+      access: 'access-valido',
+      body: { valor: 149.9 },
+    }),
+    ['contas', uuid, 'valor'],
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { id: uuid, valor: '149.90' });
+});
+
+test('edição de valor bloqueia outra origem, ID inválido e subrotas ou métodos fora da lista', async () => {
+  globalThis.fetch = async () => {
+    assert.fail('Não deve chamar a API');
+  };
+  const origem = await handleBackend(
+    request(`contas/${uuid}/valor`, {
+      method: 'PATCH',
+      access: 'access-valido',
+      origin: 'https://outro-site.example',
+      body: { valor: 100 },
+    }),
+    ['contas', uuid, 'valor'],
+  );
+  assert.equal(origem.status, 403);
+  for (const path of [
+    ['contas', '123', 'valor'],
+    ['contas', uuid, 'outro'],
+    ['formas-pagamento', uuid, 'valor'],
+    ['contas', uuid, 'valor', 'extra'],
+  ]) {
+    assert.equal(
+      (
+        await handleBackend(
+          request(path.join('/'), {
+            method: 'PATCH',
+            access: 'access-valido',
+            body: { valor: 100 },
+          }),
+          path,
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(
+    (
+      await handleBackend(
+        request(`contas/${uuid}/valor`, { access: 'access-valido' }),
+        ['contas', uuid, 'valor'],
+      )
+    ).status,
+    404,
+  );
+});
+
 test('proxy permite PATCH autenticado por UUID e não envia mês nesta operação', async () => {
   for (const formaPagamentoId of [uuid, null]) {
     const body = { formaPagamentoId };

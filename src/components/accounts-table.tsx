@@ -4,6 +4,10 @@ import { moeda, dataCurta } from '@/lib/format';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
 import { rotuloMes } from '@/lib/months';
+import {
+  AccountValueDisplay,
+  AccountValueEditor,
+} from './account-value-editor';
 
 export function AccountsTable({
   contas,
@@ -14,6 +18,11 @@ export function AccountsTable({
   onPaymentMethodChange,
   methodSelectionDisabled = false,
   pendingPaymentMethod,
+  editingValueId,
+  onValueEdit,
+  onValueSave,
+  onValueCancel,
+  interactionsDisabled = false,
 }: {
   contas: Conta[];
   onPay?: (conta: Conta) => void;
@@ -26,6 +35,11 @@ export function AccountsTable({
   ) => void;
   methodSelectionDisabled?: boolean;
   pendingPaymentMethod?: { id: string; formaPagamentoId: string | null } | null;
+  editingValueId?: string | null;
+  onValueEdit?: (conta: Conta) => void;
+  onValueSave?: (conta: Conta, valor: number) => Promise<boolean>;
+  onValueCancel?: () => void;
+  interactionsDisabled?: boolean;
 }) {
   const actions = !!onPay || !!onDelete;
   return (
@@ -86,7 +100,11 @@ export function AccountsTable({
                           ? pendingPaymentMethod.formaPagamentoId || ''
                           : conta.formaPagamentoId || ''
                       }
-                      disabled={methodSelectionDisabled || !!busyId}
+                      disabled={
+                        methodSelectionDisabled ||
+                        !!busyId ||
+                        interactionsDisabled
+                      }
                       onChange={(event) =>
                         onPaymentMethodChange(conta, event.target.value || null)
                       }
@@ -122,7 +140,26 @@ export function AccountsTable({
                   {conta.pago ? 'Paga' : 'Em aberto'}
                 </span>
               </td>
-              <td className="align-right amount-cell">{moeda(conta.valor)}</td>
+              <td className="align-right amount-cell">
+                {onValueEdit && onValueSave && onValueCancel ? (
+                  editingValueId === conta.id ? (
+                    <AccountValueEditor
+                      conta={conta}
+                      busy={!!busyId}
+                      onSave={(valor) => onValueSave(conta, valor)}
+                      onCancel={onValueCancel}
+                    />
+                  ) : (
+                    <AccountValueDisplay
+                      conta={conta}
+                      disabled={!!busyId || interactionsDisabled}
+                      onEdit={() => onValueEdit(conta)}
+                    />
+                  )
+                ) : (
+                  moeda(conta.valor)
+                )}
+              </td>
               {actions && (
                 <td>
                   <div className="row-actions">
@@ -130,7 +167,7 @@ export function AccountsTable({
                       <button
                         className="button small-button secondary"
                         onClick={() => onPay(conta)}
-                        disabled={!!busyId}
+                        disabled={!!busyId || interactionsDisabled}
                       >
                         <Icon name="check" size={16} />
                         Pagar
@@ -140,7 +177,7 @@ export function AccountsTable({
                       <button
                         className="icon-button danger-icon"
                         onClick={() => onDelete(conta)}
-                        disabled={!!busyId}
+                        disabled={!!busyId || interactionsDisabled}
                         aria-label={`Excluir ${conta.nome}`}
                         title="Excluir conta"
                       >
