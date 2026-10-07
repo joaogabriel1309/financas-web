@@ -5,6 +5,20 @@ export type IconName =
   | 'chart'
   | 'wallet'
   | 'card'
+  | 'home'
+  | 'car'
+  | 'motorcycle'
+  | 'fuel'
+  | 'loan'
+  | 'health-plan'
+  | 'cart'
+  | 'heart'
+  | 'book'
+  | 'wifi'
+  | 'bolt'
+  | 'coffee'
+  | 'phone'
+  | 'receipt'
   | 'plus'
   | 'arrow'
   | 'check'
@@ -40,6 +54,79 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <rect x="2" y="4" width="20" height="16" rx="3" />
       <path d="M2 9h20M6 15h4" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="m5 10 2-6h10l2 6M3 10h18v8H3zM5 18v3M19 18v3M6 14h2M16 14h2" />
+    </>
+  ),
+  motorcycle: (
+    <>
+      <circle cx="5" cy="17" r="3" />
+      <circle cx="19" cy="17" r="3" />
+      <path d="m5 17 4-7h5M9 10l3 7H5M12 17h3M19 17 14 6h-3M14 6h3M8 7h4" />
+    </>
+  ),
+  fuel: (
+    <>
+      <rect x="4" y="3" width="10" height="18" rx="2" />
+      <rect x="6" y="6" width="6" height="5" rx="1" />
+      <path d="M2 21h14M14 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V7l-3-3M19 5v4h2" />
+    </>
+  ),
+  loan: (
+    <>
+      <circle cx="16" cy="5" r="3" />
+      <path d="M16 4v2M2 12h4v10H2zM6 13h3a3 3 0 0 1 3 3h3a2 2 0 0 1 0 4h-4M6 22h11l5-7a2 2 0 0 0-3-2l-3 4" />
+    </>
+  ),
+  'health-plan': (
+    <>
+      <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM12 8v7M8.5 11.5h7" />
+    </>
+  ),
+  cart: (
+    <>
+      <path d="M3 3h2l3 13h11l2-9H6" />
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="18" cy="20" r="1" />
+    </>
+  ),
+  heart: (
+    <path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 22l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" />
+  ),
+  book: (
+    <>
+      <path d="M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1ZM12 5v15" />
+    </>
+  ),
+  wifi: (
+    <>
+      <path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8.5 16a5.5 5.5 0 0 1 7 0" />
+      <circle cx="12" cy="20" r=".7" />
+    </>
+  ),
+  bolt: <path d="m13 2-9 12h7l-1 8 10-12h-7z" />,
+  coffee: (
+    <>
+      <path d="M5 8h12v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4ZM17 9h2a3 3 0 0 1 0 6h-2M4 22h16M8 2v3M12 2v3" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <path d="M10 5h4M11 19h2" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="m5 2 2 2 2-2 3 2 3-2 2 2 2-2v20l-2-2-2 2-3-2-3 2-2-2-2 2ZM9 8h6M9 12h6M9 16h4" />
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,

@@ -1,6 +1,7 @@
 'use client';
 
 import { moeda, dataCurta } from '@/lib/format';
+import { obterIconeConta } from '@/lib/account-icons';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
 import {
@@ -142,7 +143,7 @@ export function AccountsTable({
               <td>
                 <div className="account-name">
                   <span className={`account-icon ${conta.pago ? 'paid' : ''}`}>
-                    <Icon name="wallet" size={18} />
+                    <Icon name={obterIconeConta(conta.icone)} size={18} />
                   </span>
                   <span>
                     <strong>{conta.nome}</strong>

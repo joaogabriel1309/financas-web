@@ -16,6 +16,7 @@ export interface Sessao {
 export interface Conta {
   id: string;
   nome: string;
+  icone?: string;
   valor: string | number;
   pago: boolean;
   mes: string;

@@ -13,6 +13,8 @@ import { MonthPicker } from './month-picker';
 import { MES_REGEX, rotuloMes } from '@/lib/months';
 import { useToast } from './toast-provider';
 import { PaymentMethodField } from './payment-method-field';
+import { AccountIconField } from './account-icon-field';
+import { obterIconeConta } from '@/lib/account-icons';
 import {
   aplicarFormaPagamento,
   salvarFormaPagamento,
@@ -82,6 +84,7 @@ export function Accounts({
     if (busy) return;
     const form = new FormData(event.currentTarget);
     const nome = String(form.get('nome')).trim();
+    const icone = obterIconeConta(form.get('icone'));
     const valor = Number(form.get('valor'));
     const referencia = String(form.get('mes'));
     const recorrencia = tipoConta === 'recorrente';
@@ -112,6 +115,7 @@ export function Accounts({
         method: 'POST',
         body: JSON.stringify({
           nome,
+          icone,
           valor,
           mes: referencia,
           recorrencia,
@@ -461,6 +465,7 @@ export function Accounts({
                 disabled={busy}
               />
             </label>
+            <AccountIconField busy={busy} />
             <label>
               {tipoConta === 'parcelada'
                 ? 'Valor de cada parcela (R$)'
