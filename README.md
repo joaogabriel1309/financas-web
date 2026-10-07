@@ -33,10 +33,12 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Valor por parcela e indicação da parcela atual (ex.: 2 de 6).
 - Pagamento separado para cada mês; excluir remove a conta de todos os meses após confirmação.
 - Cadastro, busca, edição e exclusão de formas de pagamento.
+- Seleção opcional de uma forma de pagamento no cadastro da conta, com exibição na tabela. O vínculo vale para todos os meses e parcelas; excluir a forma mantém as contas e seus pagamentos sem o vínculo.
+- Troca ou remoção da forma diretamente no combobox da listagem de contas, com salvamento automático e toast. Durante a gravação os controles ficam bloqueados; uma falha restaura a seleção anterior. A visão geral continua somente para consulta.
 - Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
 - Notificações no canto superior direito com fechamento automático, barra de tempo e botão para dispensar. O prazo pausa ao passar o mouse ou focar o aviso; erros de formulário e de carregamento permanecem junto ao conteúdo para permitir correção e nova tentativa.
 
-A API ainda não recebe `formaPagamentoId` no cadastro/pagamento de contas. Por isso, o front gerencia formas separadamente e não oferece uma associação que o backend não suporta. Também não há vencimentos, receitas ou recuperação de senha nos endpoints atuais.
+A API recebe `formaPagamentoId` opcional no cadastro e retorna `formaPagamento` com `id` e `nome`. Apenas formas do usuário autenticado podem ser vinculadas. Contas existentes ou criadas sem seleção aparecem como “Não informada”. Não há vencimentos, receitas ou recuperação de senha nos endpoints atuais.
 
 ## Verificação e produção
 

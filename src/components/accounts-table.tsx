@@ -1,7 +1,7 @@
 'use client';
 
 import { moeda, dataCurta } from '@/lib/format';
-import type { Conta } from '@/lib/types';
+import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
 import { rotuloMes } from '@/lib/months';
 
@@ -10,11 +10,22 @@ export function AccountsTable({
   onPay,
   onDelete,
   busyId,
+  paymentMethods = [],
+  onPaymentMethodChange,
+  methodSelectionDisabled = false,
+  pendingPaymentMethod,
 }: {
   contas: Conta[];
   onPay?: (conta: Conta) => void;
   onDelete?: (conta: Conta) => void;
   busyId?: string | null;
+  paymentMethods?: FormaPagamento[];
+  onPaymentMethodChange?: (
+    conta: Conta,
+    formaPagamentoId: string | null,
+  ) => void;
+  methodSelectionDisabled?: boolean;
+  pendingPaymentMethod?: { id: string; formaPagamentoId: string | null } | null;
 }) {
   const actions = !!onPay || !!onDelete;
   return (
@@ -24,6 +35,7 @@ export function AccountsTable({
           <tr>
             <th scope="col">CONTA</th>
             <th scope="col">MÊS</th>
+            <th scope="col">FORMA DE PAGAMENTO</th>
             <th scope="col">STATUS</th>
             <th scope="col" className="align-right">
               VALOR
@@ -63,6 +75,47 @@ export function AccountsTable({
                 </div>
               </td>
               <td className="date-cell">{rotuloMes(conta.mes)}</td>
+              <td>
+                {onPaymentMethodChange ? (
+                  <div className="table-method-field">
+                    <select
+                      aria-label={`Forma de pagamento de ${conta.nome}`}
+                      title="Altera a forma da conta em todos os meses e parcelas"
+                      value={
+                        pendingPaymentMethod?.id === conta.id
+                          ? pendingPaymentMethod.formaPagamentoId || ''
+                          : conta.formaPagamentoId || ''
+                      }
+                      disabled={methodSelectionDisabled || !!busyId}
+                      onChange={(event) =>
+                        onPaymentMethodChange(conta, event.target.value || null)
+                      }
+                    >
+                      <option value="">Não informada</option>
+                      {conta.formaPagamentoId &&
+                        !paymentMethods.some(
+                          (method) => method.id === conta.formaPagamentoId,
+                        ) && (
+                          <option value={conta.formaPagamentoId} disabled>
+                            {conta.formaPagamento?.nome || 'Forma indisponível'}
+                          </option>
+                        )}
+                      {paymentMethods.map((method) => (
+                        <option key={method.id} value={method.id}>
+                          {method.nome}
+                        </option>
+                      ))}
+                    </select>
+                    {pendingPaymentMethod?.id === conta.id && (
+                      <small role="status">Salvando…</small>
+                    )}
+                  </div>
+                ) : (
+                  conta.formaPagamento?.nome || (
+                    <span className="muted">Não informada</span>
+                  )
+                )}
+              </td>
               <td>
                 <span className={`badge ${conta.pago ? 'paid' : 'pending'}`}>
                   <span />

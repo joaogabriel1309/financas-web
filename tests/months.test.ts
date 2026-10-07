@@ -49,6 +49,7 @@ test('tabela apresenta competência e parcela atual com status independente', ()
     createdAt: '2026-12-01T12:00:00Z',
     updatedAt: '2026-12-01T12:00:00Z',
     formaPagamentoId: null,
+    formaPagamento: null,
   };
   const html = renderToStaticMarkup(
     createElement(AccountsTable, { contas: [conta] }),

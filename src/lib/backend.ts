@@ -143,7 +143,7 @@ function allowed(path: string[], method: string) {
   if (path.length === 1) return ['GET', 'POST'].includes(method);
   if (path.length !== 2 || !UUID.test(id)) return false;
   return resource === 'contas'
-    ? ['POST', 'DELETE'].includes(method)
+    ? ['POST', 'PATCH', 'DELETE'].includes(method)
     : ['GET', 'PATCH', 'DELETE'].includes(method);
 }
 

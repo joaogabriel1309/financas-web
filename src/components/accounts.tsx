@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useResource } from '@/lib/use-resource';
 import { moeda } from '@/lib/format';
-import type { Conta } from '@/lib/types';
+import type { Conta, FormaPagamento } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
 import { PageHeading } from './page-heading';
@@ -13,6 +13,11 @@ import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
 import { MES_REGEX, rotuloMes } from '@/lib/months';
 import { useToast } from './toast-provider';
+import { PaymentMethodField } from './payment-method-field';
+import {
+  aplicarFormaPagamento,
+  salvarFormaPagamento,
+} from '@/lib/account-payment-method';
 
 type Action = { type: 'pay' | 'delete'; conta: Conta };
 
@@ -29,12 +34,18 @@ export function Accounts({
     `/contas?mes=${mes}`,
   );
   const [creating, setCreating] = useState(initiallyOpen);
+  const formas = useResource<FormaPagamento[]>('/formas-pagamento');
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [tipoConta, setTipoConta] = useState('unica');
+  const [methodChange, setMethodChange] = useState<{
+    id: string;
+    formaPagamentoId: string | null;
+  } | null>(null);
+  const changingMethod = useRef(false);
   const all = data || [];
   const filtered = all.filter(
     (conta) =>
@@ -63,6 +74,8 @@ export function Accounts({
     const referencia = String(form.get('mes'));
     const recorrencia = tipoConta === 'recorrente';
     const parcela = tipoConta === 'parcelada' ? Number(form.get('parcela')) : 1;
+    const formaPagamentoId =
+      String(form.get('formaPagamentoId') || '').trim() || null;
     if (nome.length < 2 || !Number.isFinite(valor) || valor < 0) {
       setFormError(
         'Informe um nome com pelo menos 2 caracteres e um valor válido.',
@@ -91,6 +104,7 @@ export function Accounts({
           mes: referencia,
           recorrencia,
           parcela,
+          formaPagamentoId,
         }),
       });
       await reload();
@@ -140,6 +154,42 @@ export function Accounts({
     }
   }
 
+  async function changePaymentMethod(
+    conta: Conta,
+    formaPagamentoId: string | null,
+  ) {
+    if (
+      busy ||
+      creating ||
+      action ||
+      changingMethod.current ||
+      conta.formaPagamentoId === formaPagamentoId
+    )
+      return;
+    changingMethod.current = true;
+    setBusy(true);
+    setMethodChange({ id: conta.id, formaPagamentoId });
+    try {
+      const vinculo = await salvarFormaPagamento(conta.id, formaPagamentoId);
+      setData((previous) => aplicarFormaPagamento(previous, vinculo));
+      toast.success(
+        formaPagamentoId
+          ? 'Forma de pagamento atualizada.'
+          : 'Forma de pagamento removida.',
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível alterar a forma de pagamento.',
+      );
+    } finally {
+      changingMethod.current = false;
+      setMethodChange(null);
+      setBusy(false);
+    }
+  }
+
   return (
     <>
       <PageHeading
@@ -149,6 +199,7 @@ export function Accounts({
       >
         <button
           className="button primary"
+          disabled={busy}
           onClick={() => {
             setCreating(true);
             setFormError(null);
@@ -164,6 +215,22 @@ export function Accounts({
         pathname="/contas"
         disabled={busy || !!action || creating}
       />
+      <p className="form-hint list-method-hint">
+        Troque a forma de pagamento diretamente na lista. A alteração é salva
+        automaticamente e vale para todos os meses e parcelas da conta.
+      </p>
+      {!creating && formas.error && (
+        <>
+          <ErrorMessage message={`Formas de pagamento: ${formas.error}`} />
+          <button
+            className="button secondary retry-button"
+            disabled={busy}
+            onClick={() => void formas.reload()}
+          >
+            Tentar carregar formas novamente
+          </button>
+        </>
+      )}
       <ErrorMessage message={error} />
       {error && (
         <button
@@ -224,7 +291,15 @@ export function Accounts({
               contas={filtered}
               onPay={(conta) => openAction({ type: 'pay', conta })}
               onDelete={(conta) => openAction({ type: 'delete', conta })}
-              busyId={busy ? action?.conta.id : null}
+              busyId={busy ? action?.conta.id || methodChange?.id : null}
+              paymentMethods={formas.data || []}
+              onPaymentMethodChange={(conta, formaPagamentoId) =>
+                void changePaymentMethod(conta, formaPagamentoId)
+              }
+              methodSelectionDisabled={
+                busy || creating || !!action || formas.loading || !!formas.error
+              }
+              pendingPaymentMethod={methodChange}
             />
           ) : (
             <EmptyState
@@ -242,6 +317,7 @@ export function Accounts({
               {!all.length && (
                 <button
                   className="button secondary"
+                  disabled={busy}
                   onClick={() => {
                     setCreating(true);
                     setFormError(null);
@@ -365,6 +441,13 @@ export function Accounts({
                 />
               </label>
             )}
+            <PaymentMethodField
+              methods={formas.data}
+              loading={formas.loading}
+              error={formas.error}
+              busy={busy}
+              onRetry={() => void formas.reload()}
+            />
             <p className="form-hint">
               {tipoConta === 'recorrente'
                 ? 'Cada mês tem seu próprio pagamento. Marcar recorrência desmarca parcelas.'

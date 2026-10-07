@@ -28,6 +28,7 @@ export interface Conta {
   createdAt: string;
   updatedAt: string;
   formaPagamentoId: string | null;
+  formaPagamento: Pick<FormaPagamento, 'id' | 'nome'> | null;
 }
 
 export interface FormaPagamento {

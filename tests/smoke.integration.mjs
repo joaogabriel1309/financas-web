@@ -26,6 +26,18 @@ test(
     const contas = [];
     const formas = [];
     const pagamentos = new Map();
+    const apresentarConta = (item, mes) => {
+      const forma = formas.find(
+        (method) => method.id === item.formaPagamentoId,
+      );
+      return {
+        ...item,
+        mes: mes || item.mesReferencia,
+        pago: pagamentos.get(item.id)?.has(mes || item.mesReferencia) || false,
+        formaPagamentoId: item.formaPagamentoId || null,
+        formaPagamento: forma ? { id: forma.id, nome: forma.nome } : null,
+      };
+    };
     const mock = createServer(async (req, res) => {
       try {
         const chunks = [];
@@ -57,14 +69,7 @@ test(
                           item.recorrencia ||
                           item.mesReferencia === mes,
                       )
-                      .map((item) => ({
-                        ...item,
-                        mes: mes || item.mesReferencia,
-                        pago:
-                          pagamentos
-                            .get(item.id)
-                            ?.has(mes || item.mesReferencia) || false,
-                      }))
+                      .map((item) => apresentarConta(item, mes))
                   : collection;
             if (!id && req.method === 'POST') {
               value = {
@@ -80,6 +85,7 @@ test(
                 parcelaAtual: body.recorrencia ? null : 1,
               };
               collection.push(value);
+              if (resource === 'contas') value = apresentarConta(value, mes);
               status = 201;
             }
             if (id) {
@@ -87,10 +93,24 @@ test(
               assert.notEqual(index, -1);
               if (req.method === 'DELETE') {
                 value = collection.splice(index, 1)[0];
+                if (resource === 'formas-pagamento') {
+                  for (const conta of contas) {
+                    if (conta.formaPagamentoId === id)
+                      conta.formaPagamentoId = null;
+                  }
+                }
                 if (resource === 'contas') status = 204;
               } else if (req.method === 'PATCH') {
                 Object.assign(collection[index], body);
                 value = collection[index];
+                if (resource === 'contas') {
+                  const conta = apresentarConta(value, mes);
+                  value = {
+                    id: conta.id,
+                    formaPagamentoId: conta.formaPagamentoId,
+                    formaPagamento: conta.formaPagamento,
+                  };
+                }
               } else if (req.method === 'POST') {
                 const meses = pagamentos.get(id) || new Set();
                 meses.add(mes || collection[index].mesReferencia);
@@ -259,15 +279,82 @@ test(
       const method = await (
         await call('/formas-pagamento', 'POST', { nome: 'Pix' })
       ).json();
+      const contaVinculadaResponse = await call('/contas', 'POST', {
+        nome: 'Internet com Pix',
+        valor: 100,
+        mes: '2026-12',
+        recorrencia: true,
+        formaPagamentoId: method.id,
+      });
+      assert.equal(contaVinculadaResponse.status, 201);
+      const contaVinculada = await contaVinculadaResponse.json();
+      assert.equal(contaVinculada.formaPagamentoId, method.id);
+      assert.deepEqual(contaVinculada.formaPagamento, {
+        id: method.id,
+        nome: 'Pix',
+      });
       const changed = await call(`/formas-pagamento/${method.id}`, 'PATCH', {
         nome: 'Pix pessoal',
       });
       assert.equal((await changed.json()).nome, 'Pix pessoal');
+      assert.deepEqual(
+        (await (await call('/contas?mes=2027-01')).json())[0].formaPagamento,
+        { id: method.id, nome: 'Pix pessoal' },
+      );
+      assert.equal(
+        (await call(`/contas/${contaVinculada.id}?mes=2027-01`, 'POST')).status,
+        204,
+      );
+      const outraForma = await (
+        await call('/formas-pagamento', 'POST', { nome: 'Cartão' })
+      ).json();
+      const alterada = await call(`/contas/${contaVinculada.id}`, 'PATCH', {
+        formaPagamentoId: outraForma.id,
+      });
+      assert.equal(alterada.status, 200);
+      assert.deepEqual(await alterada.json(), {
+        id: contaVinculada.id,
+        formaPagamentoId: outraForma.id,
+        formaPagamento: { id: outraForma.id, nome: 'Cartão' },
+      });
+      const [aposTroca] = await (await call('/contas?mes=2027-01')).json();
+      assert.equal(aposTroca.formaPagamentoId, outraForma.id);
+      assert.equal(aposTroca.pago, true);
+      const removida = await call(`/contas/${contaVinculada.id}`, 'PATCH', {
+        formaPagamentoId: null,
+      });
+      assert.equal(removida.status, 200);
+      assert.deepEqual(await removida.json(), {
+        id: contaVinculada.id,
+        formaPagamentoId: null,
+        formaPagamento: null,
+      });
+      assert.equal(
+        (
+          await call(`/contas/${contaVinculada.id}`, 'PATCH', {
+            formaPagamentoId: method.id,
+          })
+        ).status,
+        200,
+      );
+      assert.equal(
+        (await call(`/formas-pagamento/${outraForma.id}`, 'DELETE')).status,
+        200,
+      );
       assert.equal(
         (await call(`/formas-pagamento/${method.id}`, 'DELETE')).status,
         200,
       );
       assert.deepEqual(await (await call('/formas-pagamento')).json(), []);
+      const [contaSemForma] = await (await call('/contas?mes=2027-01')).json();
+      assert.equal(contaSemForma.id, contaVinculada.id);
+      assert.equal(contaSemForma.formaPagamentoId, null);
+      assert.equal(contaSemForma.formaPagamento, null);
+      assert.equal(contaSemForma.pago, true);
+      assert.equal(
+        (await call(`/contas/${contaVinculada.id}`, 'DELETE')).status,
+        204,
+      );
       const logout = await call('/auth/logout', 'POST');
       assert.equal(logout.status, 204);
       assert.match(logout.headers.get('set-cookie'), /Max-Age=0/);

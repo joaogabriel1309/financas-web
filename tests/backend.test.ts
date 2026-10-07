@@ -27,6 +27,136 @@ const session = {
 };
 const uuid = '84933758-d41a-45cf-9116-62c2b7ccfb43';
 
+test('proxy permite PATCH autenticado por UUID e não envia mês nesta operação', async () => {
+  for (const formaPagamentoId of [uuid, null]) {
+    const body = { formaPagamentoId };
+    const vinculo = {
+      id: uuid,
+      formaPagamentoId,
+      formaPagamento: formaPagamentoId ? { id: uuid, nome: 'Pix' } : null,
+    };
+    globalThis.fetch = async (input, options) => {
+      assert.equal(new URL(String(input)).pathname, `/contas/${uuid}`);
+      assert.equal(new URL(String(input)).search, '');
+      assert.equal(options?.method, 'PATCH');
+      assert.deepEqual(JSON.parse(options?.body as string), body);
+      assert.equal(
+        new Headers(options?.headers).get('authorization'),
+        'Bearer access-valido',
+      );
+      return Response.json(vinculo);
+    };
+    const response = await handleBackend(
+      request(`contas/${uuid}?mes=2027-01`, {
+        method: 'PATCH',
+        access: 'access-valido',
+        body,
+      }),
+      ['contas', uuid],
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), vinculo);
+  }
+});
+
+test('PATCH de outra origem ou ID inválido não chega à API', async () => {
+  globalThis.fetch = async () => {
+    assert.fail('Não deve chamar a API');
+  };
+  const externo = await handleBackend(
+    request(`contas/${uuid}`, {
+      method: 'PATCH',
+      origin: 'https://outro-site.example',
+      access: 'access-valido',
+      body: { formaPagamentoId: null },
+    }),
+    ['contas', uuid],
+  );
+  assert.equal(externo.status, 403);
+  const invalido = await handleBackend(
+    request('contas/123', {
+      method: 'PATCH',
+      access: 'access-valido',
+      body: { formaPagamentoId: null },
+    }),
+    ['contas', '123'],
+  );
+  assert.equal(invalido.status, 404);
+});
+
+test('PATCH renova sessão preservando corpo e resposta do vínculo', async () => {
+  const body = { formaPagamentoId: null };
+  const vinculo = { id: uuid, formaPagamentoId: null, formaPagamento: null };
+  let chamadas = 0;
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith('/auth/refresh')) return Response.json(session);
+    chamadas++;
+    assert.equal(options?.method, 'PATCH');
+    assert.deepEqual(JSON.parse(options?.body as string), body);
+    return new Headers(options?.headers).get('authorization') ===
+      'Bearer new-access'
+      ? Response.json(vinculo)
+      : Response.json({}, { status: 401 });
+  };
+  const response = await handleBackend(
+    request(`contas/${uuid}`, {
+      method: 'PATCH',
+      access: 'expired',
+      refresh: 'refresh-method-change',
+      body,
+    }),
+    ['contas', uuid],
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), vinculo);
+  assert.equal(chamadas, 2);
+});
+
+test('proxy encaminha vínculo opcional e preserva forma na resposta da API', async () => {
+  for (const formaPagamentoId of [uuid, null]) {
+    const body = { nome: 'Internet', mes: '2026-10', formaPagamentoId };
+    const conta = {
+      id: 'conta-id',
+      ...body,
+      formaPagamento: formaPagamentoId ? { id: uuid, nome: 'Pix' } : null,
+    };
+    globalThis.fetch = async (_input, options) => {
+      assert.deepEqual(JSON.parse(options?.body as string), body);
+      assert.equal(
+        new Headers(options?.headers).get('authorization'),
+        'Bearer access-valido',
+      );
+      return Response.json(conta, { status: 201 });
+    };
+    const response = await handleBackend(
+      request('contas', { method: 'POST', access: 'access-valido', body }),
+      ['contas'],
+    );
+    assert.equal(response.status, 201);
+    assert.deepEqual(await response.json(), conta);
+  }
+});
+
+test('proxy preserva rejeição da API para forma alheia sem mascarar o erro', async () => {
+  globalThis.fetch = async () =>
+    Response.json(
+      { message: 'Forma de pagamento não encontrada.' },
+      { status: 404 },
+    );
+  const response = await handleBackend(
+    request('contas', {
+      method: 'POST',
+      access: 'access-valido',
+      body: { nome: 'Internet', formaPagamentoId: uuid },
+    }),
+    ['contas'],
+  );
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    message: 'Forma de pagamento não encontrada.',
+  });
+});
+
 test('proxy preserva mês na listagem e no pagamento sem encaminhar parâmetros extras', async () => {
   globalThis.fetch = async (input, options) => {
     const url = new URL(String(input));

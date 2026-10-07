@@ -250,7 +250,7 @@ export function PaymentMethods() {
       {deleting && (
         <Modal
           title="Excluir forma de pagamento?"
-          description={`“${deleting.nome}” será excluída. Essa ação não pode ser desfeita.`}
+          description={`“${deleting.nome}” será excluída. As contas vinculadas e seus pagamentos serão mantidos, mas ficarão sem forma de pagamento. Essa ação não pode ser desfeita.`}
           busy={busy}
           onClose={() => setDeleting(null)}
         >

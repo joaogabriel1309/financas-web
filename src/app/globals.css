@@ -646,6 +646,34 @@ svg {
   white-space: nowrap;
   font-size: 12px;
 }
+.list-method-hint {
+  margin: 0 0 16px;
+}
+.table-method-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.table-method-field select {
+  width: 100%;
+  min-width: 150px;
+  max-width: 240px;
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid #dce2e4;
+  border-radius: 8px;
+  font: inherit;
+}
+.table-method-field select:disabled {
+  background: #f5f7f6;
+  cursor: not-allowed;
+}
+.table-method-field small {
+  color: var(--muted);
+  font-size: 11px;
+}
 .accounts-table th {
   padding: 14px 22px;
   text-align: left;
@@ -995,7 +1023,8 @@ svg {
   font-size: 12px;
   font-weight: 600;
 }
-.form-stack input {
+.form-stack input,
+.form-stack select {
   border: 1px solid #dce2e4;
   border-radius: 8px;
   padding: 13px 14px;
@@ -1009,7 +1038,8 @@ svg {
 .form-stack input::placeholder {
   color: #929a9e;
 }
-.form-stack input:disabled {
+.form-stack input:disabled,
+.form-stack select:disabled {
   background: #f5f7f6;
 }
 .password-field {
