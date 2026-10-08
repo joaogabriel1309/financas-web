@@ -26,6 +26,10 @@ export interface Conta {
   parcela: number;
   parcelaAtual: number | null;
   dataHoraPagamento: string | null;
+  diaVencimento: number | null;
+  dataVencimento: string | null;
+  situacaoVencimento:
+    'paga' | 'em_aberto' | 'atrasada' | 'vence_hoje' | 'proxima';
   createdAt: string;
   updatedAt: string;
   formaPagamentoId: string | null;

@@ -794,6 +794,7 @@ svg {
   border-radius: 5px;
   font-size: 9px;
   font-weight: 550;
+  white-space: nowrap;
 }
 .badge > span {
   width: 4px;
@@ -808,6 +809,18 @@ svg {
 .badge.pending {
   background: var(--amber-soft);
   color: var(--amber);
+}
+.badge.overdue {
+  background: #fde9e9;
+  color: #aa3030;
+}
+.badge.due-today {
+  background: #fff0df;
+  color: #9a4500;
+}
+.badge.due-soon {
+  background: #fff8d7;
+  color: #815100;
 }
 .amount-cell {
   font-weight: 600;

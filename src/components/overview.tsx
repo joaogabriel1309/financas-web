@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { StatCard } from './page-heading';
 import { useResource } from '@/lib/use-resource';
+import { useDueDateRefresh } from '@/lib/use-due-date-refresh';
 import type { Conta } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState } from './modal';
@@ -16,6 +17,7 @@ export function Overview({ mes }: { mes: string }) {
     error,
     reload,
   } = useResource<Conta[]>(`/contas?mes=${mes}`);
+  useDueDateRefresh(reload, loading);
   const all = contas || [];
   const paid = all.filter((conta) => conta.pago);
   const pending = all.filter((conta) => !conta.pago);

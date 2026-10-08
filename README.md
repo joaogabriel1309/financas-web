@@ -34,6 +34,9 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Navegação por mês nas contas e na visão geral, preservada na URL.
 - Recorrência mensal a partir do mês inicial e parcelas até a quantidade informada.
 - Valor por parcela e indicação da parcela atual (ex.: 2 de 6).
+- Dia de vencimento opcional (1 a 31) no cadastro e na edição, válido para todos os meses e parcelas. Dias inexistentes no mês usam o último dia válido. Deixar em branco remove o vencimento.
+- Data do vencimento junto ao nome e avisos coloridos “Vence hoje”, “Próxima do vencimento” (próximos três dias) e “Atrasada” na listagem e na visão geral. Contas pagas continuam exibindo “Paga”. O cálculo usa o fuso de Cuiabá.
+- Atualização dos status ao retornar à aba/janela e na virada do dia, sem interromper edições ou gravações. A seleção das contas e os filtros são mantidos.
 - Pagamento separado para cada mês; excluir remove a conta de todos os meses após confirmação.
 - Cadastro, busca, edição e exclusão de formas de pagamento, com cor personalizada e ícone.
 - Seletores visuais de formas de pagamento no cadastro e na listagem de contas: mostram nome, cor e ícone, com navegação por teclado e salvamento automático na tabela.
@@ -43,7 +46,7 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
 - Notificações no canto superior direito com fechamento automático, barra de tempo e botão para dispensar. O prazo pausa ao passar o mouse ou focar o aviso; erros de formulário e de carregamento permanecem junto ao conteúdo para permitir correção e nova tentativa.
 
-A API recebe `formaPagamentoId` opcional no cadastro e retorna `formaPagamento` com `id` e `nome`. Apenas formas do usuário autenticado podem ser vinculadas. Contas existentes ou criadas sem seleção aparecem como “Não informada”. Não há vencimentos, receitas ou recuperação de senha nos endpoints atuais.
+A API recebe `formaPagamentoId` opcional no cadastro e retorna `formaPagamento` com `id` e `nome`. Apenas formas do usuário autenticado podem ser vinculadas. Contas existentes ou criadas sem seleção aparecem como “Não informada”. Não há receitas ou recuperação de senha nos endpoints atuais.
 
 ## Verificação e produção
 

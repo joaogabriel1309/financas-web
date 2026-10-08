@@ -1,9 +1,10 @@
 'use client';
 
-import { moeda, dataCurta } from '@/lib/format';
+import { moeda, dataCurta, dataCalendario } from '@/lib/format';
 import { obterIconeConta } from '@/lib/account-icons';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
+import { AccountDueStatus } from './account-due-status';
 import { PaymentMethodSelect } from './payment-method-select';
 import { PaymentMethodDisplay } from './payment-method-display';
 import {
@@ -160,6 +161,11 @@ export function AccountsTable({
                         </small>
                       )
                     )}
+                    {conta.dataVencimento && (
+                      <small>
+                        Vencimento: {dataCalendario(conta.dataVencimento)}
+                      </small>
+                    )}
                     {conta.dataHoraPagamento && (
                       <small>
                         Pago em {dataCurta(conta.dataHoraPagamento)}
@@ -199,10 +205,7 @@ export function AccountsTable({
                 )}
               </td>
               <td>
-                <span className={`badge ${conta.pago ? 'paid' : 'pending'}`}>
-                  <span />
-                  {conta.pago ? 'Paga' : 'Em aberto'}
-                </span>
+                <AccountDueStatus conta={conta} />
               </td>
               <td className="align-right amount-cell">
                 {onValueEdit && onValueSave && onValueCancel ? (

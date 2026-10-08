@@ -13,6 +13,7 @@ export function useResource<T>(path: string) {
         if (!signal?.aborted) {
           setData(value);
           setError(null);
+          return true;
         }
       } catch (error) {
         if (!signal?.aborted)
@@ -22,6 +23,7 @@ export function useResource<T>(path: string) {
               : 'Não foi possível carregar os dados.',
           );
       }
+      return false;
     },
     [path],
   );

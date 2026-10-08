@@ -44,6 +44,8 @@ export function AccountCreate({ mes, conta }: { mes: string; conta?: Conta }) {
     const parcela = tipoConta === 'parcelada' ? Number(form.get('parcela')) : 1;
     const formaPagamentoId =
       String(form.get('formaPagamentoId') || '').trim() || null;
+    const diaInformado = String(form.get('diaVencimento') || '').trim();
+    const diaVencimento = diaInformado === '' ? null : Number(diaInformado);
     if (nome.length < 2 || !Number.isFinite(valor) || valor < 0) {
       setFormError(
         'Informe um nome com pelo menos 2 caracteres e um valor válido.',
@@ -61,6 +63,15 @@ export function AccountCreate({ mes, conta }: { mes: string; conta?: Conta }) {
       );
       return;
     }
+    if (
+      diaVencimento !== null &&
+      (!Number.isInteger(diaVencimento) ||
+        diaVencimento < 1 ||
+        diaVencimento > 31)
+    ) {
+      setFormError('Informe um dia de vencimento entre 1 e 31.');
+      return;
+    }
     submitting.current = true;
     setBusy(true);
     setFormError(null);
@@ -76,6 +87,7 @@ export function AccountCreate({ mes, conta }: { mes: string; conta?: Conta }) {
             mes: referencia,
             recorrencia,
             parcela,
+            diaVencimento,
             // Se o seletor estiver indisponível, a edição preserva o vínculo atual.
             ...(form.has('formaPagamentoId') || !conta
               ? { formaPagamentoId }
@@ -181,6 +193,26 @@ export function AccountCreate({ mes, conta }: { mes: string; conta?: Conta }) {
                   />
                 </label>
               </div>
+              <label>
+                Dia de vencimento (opcional)
+                <input
+                  name="diaVencimento"
+                  aria-describedby="account-due-day-hint"
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  max="31"
+                  step="1"
+                  defaultValue={conta?.diaVencimento ?? ''}
+                  placeholder="Ex.: 15"
+                  disabled={busy}
+                />
+              </label>
+              <p className="form-hint" id="account-due-day-hint">
+                Deixe em branco para não informar vencimento. O dia vale para
+                todos os meses e parcelas; se ele não existir no mês, será usado
+                o último dia.
+              </p>
               <label className="recurrence-field">
                 <input
                   name="recorrencia"

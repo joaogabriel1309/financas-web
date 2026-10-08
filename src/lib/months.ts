@@ -9,6 +9,16 @@ export function mesAtual(data = new Date()): string {
   return `${partes.find((p) => p.type === 'year')!.value}-${partes.find((p) => p.type === 'month')!.value}`;
 }
 
+export function dataHoje(data = new Date()): string {
+  const partes = new Intl.DateTimeFormat('en', {
+    timeZone: 'America/Cuiaba',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(data);
+  return `${partes.find((p) => p.type === 'year')!.value}-${partes.find((p) => p.type === 'month')!.value}-${partes.find((p) => p.type === 'day')!.value}`;
+}
+
 export function mesSelecionado(valor?: string | string[]): string {
   return typeof valor === 'string' && MES_REGEX.test(valor)
     ? valor

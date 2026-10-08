@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useResource } from '@/lib/use-resource';
+import { useDueDateRefresh } from '@/lib/use-due-date-refresh';
 import { moeda } from '@/lib/format';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { AccountsTable } from './accounts-table';
@@ -41,6 +42,10 @@ export function Accounts({ mes }: { mes: string }) {
   const [editingValueId, setEditingValueId] = useState<string | null>(null);
   const [savingValueId, setSavingValueId] = useState<string | null>(null);
   const savingValue = useRef(false);
+  useDueDateRefresh(
+    reload,
+    loading || busy || action !== null || editingValueId !== null,
+  );
   const all = data || [];
   const filtered = all.filter(
     (conta) =>

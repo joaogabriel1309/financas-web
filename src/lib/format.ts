@@ -13,6 +13,12 @@ export function dataCurta(valor: string): string {
   }).format(new Date(valor));
 }
 
+// Datas de calendário da API não representam um instante nem devem mudar de fuso.
+export function dataCalendario(valor: string): string {
+  const [ano, mes, dia] = valor.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 export function iniciais(nome: string): string {
   return nome
     .trim()
