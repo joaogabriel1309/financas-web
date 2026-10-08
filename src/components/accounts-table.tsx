@@ -4,6 +4,8 @@ import { moeda, dataCurta } from '@/lib/format';
 import { obterIconeConta } from '@/lib/account-icons';
 import type { Conta, FormaPagamento } from '@/lib/types';
 import { Icon } from './icon';
+import { PaymentMethodSelect } from './payment-method-select';
+import { PaymentMethodDisplay } from './payment-method-display';
 import {
   AccountValueDisplay,
   AccountValueEditor,
@@ -167,9 +169,11 @@ export function AccountsTable({
               <td>
                 {onPaymentMethodChange ? (
                   <div className="table-method-field">
-                    <select
-                      aria-label={`Forma de pagamento de ${conta.nome}`}
+                    <PaymentMethodSelect
+                      label={`Forma de pagamento de ${conta.nome}`}
                       title="Altera a forma da conta em todos os meses e parcelas"
+                      methods={paymentMethods}
+                      selectedMethod={conta.formaPagamento}
                       value={
                         pendingPaymentMethod?.id === conta.id
                           ? pendingPaymentMethod.formaPagamentoId || ''
@@ -180,33 +184,16 @@ export function AccountsTable({
                         !!busyId ||
                         interactionsDisabled
                       }
-                      onChange={(event) =>
-                        onPaymentMethodChange(conta, event.target.value || null)
-                      }
-                    >
-                      <option value="">Não informada</option>
-                      {conta.formaPagamentoId &&
-                        !paymentMethods.some(
-                          (method) => method.id === conta.formaPagamentoId,
-                        ) && (
-                          <option value={conta.formaPagamentoId} disabled>
-                            {conta.formaPagamento?.nome || 'Forma indisponível'}
-                          </option>
-                        )}
-                      {paymentMethods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.nome}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(id) => onPaymentMethodChange(conta, id)}
+                    />
                     {pendingPaymentMethod?.id === conta.id && (
                       <small role="status">Salvando…</small>
                     )}
                   </div>
+                ) : conta.formaPagamento ? (
+                  <PaymentMethodDisplay method={conta.formaPagamento} />
                 ) : (
-                  conta.formaPagamento?.nome || (
-                    <span className="muted">Não informada</span>
-                  )
+                  <span className="muted">Não informada</span>
                 )}
               </td>
               <td>

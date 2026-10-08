@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useId } from 'react';
 import type { FormaPagamento } from '@/lib/types';
 import { ErrorMessage } from './modal';
+import { PaymentMethodSelect } from './payment-method-select';
 
 export function PaymentMethodField({
   methods,
@@ -18,32 +19,28 @@ export function PaymentMethodField({
   busy: boolean;
   onRetry: () => void;
 }) {
-  const hintId = useId();
+  const selectId = useId();
+  const hintId = `${selectId}-hint`;
   return (
     <>
-      <label>
-        Forma de pagamento (opcional)
-        <select
+      <div className="form-control">
+        <label htmlFor={selectId}>Forma de pagamento (opcional)</label>
+        <PaymentMethodSelect
+          id={selectId}
           name="formaPagamentoId"
-          defaultValue=""
+          label="Forma de pagamento (opcional)"
+          methods={error ? [] : methods || []}
           disabled={busy || loading || !!error}
-          aria-describedby={hintId}
-        >
-          <option value="">
-            {loading
+          describedBy={hintId}
+          placeholder={
+            loading
               ? 'Carregando formas de pagamento…'
               : error
                 ? 'Formas de pagamento indisponíveis'
-                : 'Não informada'}
-          </option>
-          {!error &&
-            methods?.map((method) => (
-              <option key={method.id} value={method.id}>
-                {method.nome}
-              </option>
-            ))}
-        </select>
-      </label>
+                : 'Não informada'
+          }
+        />
+      </div>
       <p className="form-hint" id={hintId}>
         {error ? (
           'Você pode tentar novamente ou cadastrar a conta sem forma de pagamento.'

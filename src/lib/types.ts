@@ -29,12 +29,14 @@ export interface Conta {
   createdAt: string;
   updatedAt: string;
   formaPagamentoId: string | null;
-  formaPagamento: Pick<FormaPagamento, 'id' | 'nome'> | null;
+  formaPagamento: Pick<FormaPagamento, 'id' | 'nome' | 'cor' | 'icone'> | null;
 }
 
 export interface FormaPagamento {
   id: string;
   nome: string;
+  cor?: string;
+  icone?: string;
   createdAt: string;
   updatedAt: string;
 }

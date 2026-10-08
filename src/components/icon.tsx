@@ -5,6 +5,9 @@ export type IconName =
   | 'chart'
   | 'wallet'
   | 'card'
+  | 'banknote'
+  | 'bank'
+  | 'pix'
   | 'home'
   | 'car'
   | 'motorcycle'
@@ -54,6 +57,23 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <rect x="2" y="4" width="20" height="16" rx="3" />
       <path d="M2 9h20M6 15h4" />
+    </>
+  ),
+  banknote: (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M6 9h.01M18 15h.01" />
+    </>
+  ),
+  bank: (
+    <>
+      <path d="m3 9 9-6 9 6ZM3 21h18M5 18v-6M10 18v-6M14 18v-6M19 18v-6" />
+    </>
+  ),
+  pix: (
+    <>
+      <path d="m12 2 10 10-10 10L2 12zM2 12h5l5-5 5 5h5M2 12h5l5 5 5-5h5" />
     </>
   ),
   home: (

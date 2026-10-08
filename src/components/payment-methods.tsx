@@ -8,6 +8,12 @@ import { dataCurta } from '@/lib/format';
 import { Icon } from './icon';
 import { EmptyState, ErrorMessage, LoadingState, Modal } from './modal';
 import { useToast } from './toast-provider';
+import { PaymentMethodAppearanceFields } from './payment-method-appearance-fields';
+import { PaymentMethodSymbol } from './payment-method-display';
+import {
+  paymentMethodColor,
+  paymentMethodIcon,
+} from '@/lib/payment-method-appearance';
 
 export function PaymentMethods() {
   const toast = useToast();
@@ -32,7 +38,10 @@ export function PaymentMethods() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editing || busy) return;
-    const nome = String(new FormData(event.currentTarget).get('nome')).trim();
+    const form = new FormData(event.currentTarget);
+    const nome = String(form.get('nome')).trim();
+    const cor = paymentMethodColor(form.get('cor'));
+    const icone = paymentMethodIcon(form.get('icone'));
     if (nome.length < 2) {
       setFormError('Informe um nome com pelo menos 2 caracteres.');
       return;
@@ -46,7 +55,7 @@ export function PaymentMethods() {
           : `/formas-pagamento/${editing.id}`,
         {
           method: editing === 'new' ? 'POST' : 'PATCH',
-          body: JSON.stringify({ nome }),
+          body: JSON.stringify({ nome, cor, icone }),
         },
       );
       setData((previous) =>
@@ -137,12 +146,10 @@ export function PaymentMethods() {
         data &&
         (filtered.length ? (
           <div className="methods-grid">
-            {filtered.map((method, index) => (
+            {filtered.map((method) => (
               <article className="method-card" key={method.id}>
                 <div className="method-card-top">
-                  <span className={`method-icon tone-${index % 3}`}>
-                    <Icon name="card" size={25} />
-                  </span>
+                  <PaymentMethodSymbol method={method} size={25} />
                   <div className="row-actions">
                     <button
                       className="icon-button"
@@ -214,7 +221,7 @@ export function PaymentMethods() {
               ? 'Nova forma de pagamento'
               : 'Editar forma de pagamento'
           }
-          description="Dê um nome que ajude você a identificar essa forma."
+          description="Escolha um nome, uma cor e um ícone para reconhecer essa forma rapidamente."
           busy={busy}
           onClose={() => setEditing(null)}
         >
@@ -231,6 +238,12 @@ export function PaymentMethods() {
                 disabled={busy}
               />
             </label>
+            <PaymentMethodAppearanceFields
+              key={editing === 'new' ? 'new' : editing.id}
+              cor={editing === 'new' ? undefined : editing.cor}
+              icone={editing === 'new' ? undefined : editing.icone}
+              busy={busy}
+            />
             <ErrorMessage message={formError} />
             <div className="modal-actions">
               <button
