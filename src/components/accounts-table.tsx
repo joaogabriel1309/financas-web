@@ -15,6 +15,7 @@ export function AccountsTable({
   contas,
   onPay,
   onDelete,
+  onEdit,
   busyId,
   paymentMethods = [],
   onPaymentMethodChange,
@@ -31,6 +32,7 @@ export function AccountsTable({
   contas: Conta[];
   onPay?: (conta: Conta) => void;
   onDelete?: (conta: Conta) => void;
+  onEdit?: (conta: Conta) => void;
   busyId?: string | null;
   paymentMethods?: FormaPagamento[];
   onPaymentMethodChange?: (
@@ -47,7 +49,7 @@ export function AccountsTable({
   selectedIds?: ReadonlySet<string>;
   onSelectionChange?: (ids: string[]) => void;
 }) {
-  const actions = !!onPay || !!onDelete;
+  const actions = !!onPay || !!onEdit || !!onDelete;
   const selectionDisabled = !!busyId || interactionsDisabled;
   const allSelected =
     contas.length > 0 && contas.every((conta) => selectedIds.has(conta.id));
@@ -233,6 +235,18 @@ export function AccountsTable({
                       >
                         <Icon name="check" size={16} />
                         Pagar
+                      </button>
+                    )}
+                    {onEdit && (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => onEdit(conta)}
+                        disabled={!!busyId || interactionsDisabled}
+                        aria-label={`Editar ${conta.nome}`}
+                        title="Editar conta"
+                      >
+                        <Icon name="edit" size={17} />
                       </button>
                     )}
                     {onDelete && (

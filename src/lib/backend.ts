@@ -138,7 +138,7 @@ function allowed(path: string[], method: string) {
     return (
       resource === 'contas' &&
       UUID.test(id) &&
-      path[2] === 'valor' &&
+      ['valor', 'dados'].includes(path[2]) &&
       method === 'PATCH'
     );
   if (path.length === 2 && resource === 'auth') {
@@ -150,7 +150,7 @@ function allowed(path: string[], method: string) {
   if (path.length === 1) return ['GET', 'POST'].includes(method);
   if (path.length !== 2 || !UUID.test(id)) return false;
   return resource === 'contas'
-    ? ['POST', 'PATCH', 'DELETE'].includes(method)
+    ? ['GET', 'POST', 'PATCH', 'DELETE'].includes(method)
     : ['GET', 'PATCH', 'DELETE'].includes(method);
 }
 

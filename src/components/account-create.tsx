@@ -13,20 +13,26 @@ import { PaymentMethodField } from './payment-method-field';
 import { AccountIconField } from './account-icon-field';
 import { useToast } from './toast-provider';
 
-export function AccountCreate({ mes }: { mes: string }) {
+export function AccountCreate({ mes, conta }: { mes: string; conta?: Conta }) {
   const router = useRouter();
   const toast = useToast();
   const formas = useResource<FormaPagamento[]>('/formas-pagamento');
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [tipoConta, setTipoConta] = useState('unica');
+  const [tipoConta, setTipoConta] = useState(
+    conta?.recorrencia
+      ? 'recorrente'
+      : (conta?.parcela ?? 1) > 1
+        ? 'parcelada'
+        : 'unica',
+  );
 
   function cancel() {
     if (!busy && !submitting.current) router.replace(`/contas?mes=${mes}`);
   }
 
-  async function create(event: FormEvent<HTMLFormElement>) {
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || submitting.current) return;
     const form = new FormData(event.currentTarget);
@@ -59,25 +65,44 @@ export function AccountCreate({ mes }: { mes: string }) {
     setBusy(true);
     setFormError(null);
     try {
-      await api<Conta>('/contas', {
-        method: 'POST',
-        body: JSON.stringify({
-          nome,
-          icone,
-          valor,
-          mes: referencia,
-          recorrencia,
-          parcela,
-          formaPagamentoId,
-        }),
-      });
-      toast.success('Conta cadastrada com sucesso.');
+      const atualizado = await api<Conta>(
+        conta ? `/contas/${conta.id}/dados` : '/contas',
+        {
+          method: conta ? 'PATCH' : 'POST',
+          body: JSON.stringify({
+            nome,
+            icone,
+            valor,
+            mes: referencia,
+            recorrencia,
+            parcela,
+            // Se o seletor estiver indisponível, a edição preserva o vínculo atual.
+            ...(form.has('formaPagamentoId') || !conta
+              ? { formaPagamentoId }
+              : {}),
+          }),
+        },
+      );
+      toast.success(
+        conta
+          ? 'Conta atualizada com sucesso.'
+          : 'Conta cadastrada com sucesso.',
+      );
       // Mantém o formulário bloqueado até sair da página, evitando duplicatas.
-      router.replace(`/contas?mes=${referencia}`);
+      const mesRetorno =
+        conta &&
+        mes >= atualizado.mesReferencia &&
+        (atualizado.recorrencia ||
+          (atualizado.mesFim !== null && mes <= atualizado.mesFim))
+          ? mes
+          : referencia;
+      router.replace(`/contas?mes=${mesRetorno}`);
       router.refresh();
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : 'Não foi possível cadastrar.',
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar a conta.',
       );
       submitting.current = false;
       setBusy(false);
@@ -88,9 +113,11 @@ export function AccountCreate({ mes }: { mes: string }) {
     <div className="account-create-page">
       <div className="account-create-heading">
         <div>
-          <h1>Nova conta</h1>
+          <h1>{conta ? 'Editar conta' : 'Nova conta'}</h1>
           <p>
-            Preencha os dados e escolha como a conta aparecerá na sua lista.
+            {conta
+              ? 'Atualize os dados da conta. As alterações valem para todos os meses e parcelas.'
+              : 'Preencha os dados e escolha como a conta aparecerá na sua lista.'}
           </p>
         </div>
         <button
@@ -103,7 +130,7 @@ export function AccountCreate({ mes }: { mes: string }) {
           Voltar para contas
         </button>
       </div>
-      <form className="account-create-form" onSubmit={create} aria-busy={busy}>
+      <form className="account-create-form" onSubmit={save} aria-busy={busy}>
         <div className="account-create-grid">
           <section
             className="panel account-create-section"
@@ -115,6 +142,7 @@ export function AccountCreate({ mes }: { mes: string }) {
                 Nome da conta
                 <input
                   name="nome"
+                  defaultValue={conta?.nome}
                   placeholder="Ex.: Internet de casa"
                   minLength={2}
                   maxLength={100}
@@ -129,6 +157,7 @@ export function AccountCreate({ mes }: { mes: string }) {
                     : 'Valor mensal (R$)'}
                   <input
                     name="valor"
+                    defaultValue={conta?.valor}
                     type="number"
                     inputMode="decimal"
                     min="0"
@@ -144,7 +173,7 @@ export function AccountCreate({ mes }: { mes: string }) {
                   <input
                     name="mes"
                     type="month"
-                    defaultValue={mes}
+                    defaultValue={conta?.mesReferencia ?? mes}
                     min="1900-01"
                     max="9999-12"
                     required
@@ -191,13 +220,17 @@ export function AccountCreate({ mes }: { mes: string }) {
                     min="2"
                     max="360"
                     step="1"
-                    defaultValue="2"
+                    defaultValue={
+                      conta && conta.parcela > 1 ? conta.parcela : 2
+                    }
                     required
                     disabled={busy}
                   />
                 </label>
               )}
               <PaymentMethodField
+                defaultValue={conta?.formaPagamentoId ?? ''}
+                selectedMethod={conta?.formaPagamento}
                 methods={formas.data}
                 loading={formas.loading}
                 error={formas.error}
@@ -211,10 +244,16 @@ export function AccountCreate({ mes }: { mes: string }) {
                     ? 'O valor informado é de cada parcela. Marcar parcelas desmarca recorrência.'
                     : 'Esta conta aparece somente no mês escolhido.'}
               </p>
+              {conta && (
+                <p className="form-hint">
+                  Os pagamentos já registrados serão mantidos. O período da
+                  conta deve incluir todos os meses já pagos.
+                </p>
+              )}
             </div>
           </section>
           <section className="panel account-create-section form-stack">
-            <AccountIconField busy={busy} />
+            <AccountIconField busy={busy} defaultValue={conta?.icone} />
           </section>
         </div>
         <ErrorMessage message={formError} />
@@ -228,7 +267,11 @@ export function AccountCreate({ mes }: { mes: string }) {
             Cancelar
           </button>
           <button type="submit" className="button primary" disabled={busy}>
-            {busy ? 'Salvando…' : 'Cadastrar conta'}
+            {busy
+              ? 'Salvando…'
+              : conta
+                ? 'Salvar alterações'
+                : 'Cadastrar conta'}
           </button>
         </div>
       </form>

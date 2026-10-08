@@ -27,7 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (item) => item.href === pathname || pathname.startsWith(`${item.href}/`),
   );
   const currentPage =
-    pathname === '/contas/nova' ? 'Nova conta' : currentSection?.label;
+    pathname === '/contas/nova'
+      ? 'Nova conta'
+      : /^\/contas\/[^/]+\/editar$/.test(pathname)
+        ? 'Editar conta'
+        : currentSection?.label;
 
   useEffect(() => {
     menu.current?.close();

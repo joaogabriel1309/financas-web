@@ -1,10 +1,16 @@
 'use client';
 
 import { useId } from 'react';
-import { ACCOUNT_ICONS } from '@/lib/account-icons';
+import { ACCOUNT_ICONS, obterIconeConta } from '@/lib/account-icons';
 import { Icon } from './icon';
 
-export function AccountIconField({ busy = false }: { busy?: boolean }) {
+export function AccountIconField({
+  busy = false,
+  defaultValue,
+}: {
+  busy?: boolean;
+  defaultValue?: string;
+}) {
   const hintId = useId();
 
   return (
@@ -21,7 +27,7 @@ export function AccountIconField({ busy = false }: { busy?: boolean }) {
               type="radio"
               name="icone"
               value={icon.value}
-              defaultChecked={icon.value === 'wallet'}
+              defaultChecked={icon.value === obterIconeConta(defaultValue)}
             />
             <Icon name={icon.value} size={22} />
             <span>{icon.label}</span>

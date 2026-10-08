@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useId } from 'react';
-import type { FormaPagamento } from '@/lib/types';
+import type { Conta, FormaPagamento } from '@/lib/types';
 import { ErrorMessage } from './modal';
 import { PaymentMethodSelect } from './payment-method-select';
 
@@ -12,12 +12,16 @@ export function PaymentMethodField({
   error,
   busy,
   onRetry,
+  defaultValue = '',
+  selectedMethod,
 }: {
   methods: FormaPagamento[] | null;
   loading: boolean;
   error: string | null;
   busy: boolean;
   onRetry: () => void;
+  defaultValue?: string;
+  selectedMethod?: Conta['formaPagamento'];
 }) {
   const selectId = useId();
   const hintId = `${selectId}-hint`;
@@ -28,6 +32,8 @@ export function PaymentMethodField({
         <PaymentMethodSelect
           id={selectId}
           name="formaPagamentoId"
+          defaultValue={defaultValue}
+          selectedMethod={selectedMethod}
           label="Forma de pagamento (opcional)"
           methods={error ? [] : methods || []}
           disabled={busy || loading || !!error}
@@ -43,7 +49,11 @@ export function PaymentMethodField({
       </div>
       <p className="form-hint" id={hintId}>
         {error ? (
-          'Você pode tentar novamente ou cadastrar a conta sem forma de pagamento.'
+          selectedMethod ? (
+            'A forma atual será mantida. Tente novamente para escolher outra forma de pagamento.'
+          ) : (
+            'Você pode tentar novamente ou continuar sem forma de pagamento.'
+          )
         ) : !loading && !methods?.length ? (
           <>
             Nenhuma forma cadastrada.{' '}

@@ -271,6 +271,9 @@ export function Accounts({ mes }: { mes: string }) {
               onSelectionChange={(ids) => setSelectedIds(new Set(ids))}
               onPay={(conta) => openAction({ type: 'pay', conta })}
               onDelete={(conta) => openAction({ type: 'delete', conta })}
+              onEdit={(conta) =>
+                router.push(`/contas/${conta.id}/editar?mes=${mes}`)
+              }
               busyId={
                 busy
                   ? action?.conta.id || methodChange?.id || savingValueId

@@ -29,6 +29,7 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Visão geral com total de contas, valores em aberto, valores pagos e progresso por quantidade de contas.
 - Cadastro de conta em página própria (`/contas/nova`), preservando o mês da listagem e retornando às contas após salvar ou cancelar. O endereço antigo `/contas?nova=1` redireciona para a nova tela.
 - Seleção de ícones no cadastro, incluindo moto, gasolina, empréstimo e plano de saúde, com exibição nas contas de todos os meses e parcelas.
+- Edição completa pelo lápis ao lado de excluir, em `/contas/{id}/editar`. Reutiliza o cadastro com nome, valor, mês inicial, recorrência/parcelas, ícone e forma de pagamento preenchidos. Salvar altera a conta em todos os meses sem apagar pagamentos; mudanças de período que excluam meses já pagos são bloqueadas. Ao cancelar, retorna ao mês da listagem; ao salvar, mantém esse mês se a conta ainda aparecer nele, ou abre o novo mês inicial.
 - Busca, filtros, pagamento e exclusão de contas.
 - Navegação por mês nas contas e na visão geral, preservada na URL.
 - Recorrência mensal a partir do mês inicial e parcelas até a quantidade informada.
