@@ -16,6 +16,15 @@ export interface Receita {
   updatedAt: string;
 }
 
+export interface PrevisaoMensal {
+  mes: string;
+  receitasPrevistas: string;
+  despesasPrevistas: string;
+  saldoPrevisto: string;
+  quantidadeReceitas: number;
+  quantidadeContas: number;
+}
+
 export interface Sessao {
   accessToken: string;
   refreshToken: string;

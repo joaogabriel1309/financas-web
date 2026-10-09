@@ -27,6 +27,9 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Sessão em cookies HttpOnly e renovação automática via `/auth/refresh`.
 - Logout com revogação do refresh token na API.
 - Visão geral com total de contas, valores em aberto, valores pagos e progresso por quantidade de contas.
+- Receitas em página própria: cadastro, busca, edição e exclusão de salário e outras entradas, avulsas ou recorrentes a partir do mês inicial. Edição e exclusão da definição afetam todos os meses.
+- Previsão do mês selecionado com receitas previstas, despesas previstas e saldo previsto (receitas menos despesas), destacando resultados negativos. Considera contas pagas e em aberto, recorrências e a parcela de cada mês. Não é saldo bancário nem acumulado.
+- Navegação por mês nas receitas e atalhos para adicionar ou gerenciar entradas na visão geral. Valores da previsão são calculados na API com Decimal e dados isolados por usuário.
 - Cadastro de conta em página própria (`/contas/nova`), preservando o mês da listagem e retornando às contas após salvar ou cancelar. O endereço antigo `/contas?nova=1` redireciona para a nova tela.
 - Seleção de ícones no cadastro, incluindo moto, gasolina, empréstimo e plano de saúde, com exibição nas contas de todos os meses e parcelas.
 - Edição completa pelo lápis ao lado de excluir, em `/contas/{id}/editar`. Reutiliza o cadastro com nome, valor, mês inicial, recorrência/parcelas, ícone e forma de pagamento preenchidos. Salvar altera a conta em todos os meses sem apagar pagamentos; mudanças de período que excluam meses já pagos são bloqueadas. Ao cancelar, retorna ao mês da listagem; ao salvar, mantém esse mês se a conta ainda aparecer nele, ou abre o novo mês inicial.
@@ -46,7 +49,7 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Estados de carregamento, erro e listas vazias; confirmação antes de pagar e excluir.
 - Notificações no canto superior direito com fechamento automático, barra de tempo e botão para dispensar. O prazo pausa ao passar o mouse ou focar o aviso; erros de formulário e de carregamento permanecem junto ao conteúdo para permitir correção e nova tentativa.
 
-A API recebe `formaPagamentoId` opcional no cadastro e retorna `formaPagamento` com `id` e `nome`. Apenas formas do usuário autenticado podem ser vinculadas. Contas existentes ou criadas sem seleção aparecem como “Não informada”. Não há receitas ou recuperação de senha nos endpoints atuais.
+A API recebe `formaPagamentoId` opcional no cadastro e retorna `formaPagamento` com `id` e `nome`. Apenas formas do usuário autenticado podem ser vinculadas. Contas existentes ou criadas sem seleção aparecem como “Não informada”. Não há confirmação de recebimento de receitas nem recuperação de senha nos endpoints atuais.
 
 ## Verificação e produção
 

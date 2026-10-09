@@ -9,6 +9,7 @@ import { AccountsTable } from './accounts-table';
 import { EmptyState, ErrorMessage, LoadingState } from './modal';
 import { Icon } from './icon';
 import { MonthPicker } from './month-picker';
+import { MonthlyForecast } from './monthly-forecast';
 
 export function Overview({ mes }: { mes: string }) {
   const {
@@ -35,7 +36,7 @@ export function Overview({ mes }: { mes: string }) {
       <div className="page-heading">
         <div>
           <h1>Visão geral</h1>
-          <p>Totais e pagamentos do mês selecionado.</p>
+          <p>Previsão de entradas, despesas e pagamentos do mês selecionado.</p>
         </div>
         <Link href={`/contas/nova?mes=${mes}`} className="button primary">
           <Icon name="plus" size={18} />
@@ -43,6 +44,7 @@ export function Overview({ mes }: { mes: string }) {
         </Link>
       </div>
       <MonthPicker mes={mes} pathname="/visao-geral" />
+      <MonthlyForecast key={mes} mes={mes} />
       <ErrorMessage message={error} />
       {error && (
         <button

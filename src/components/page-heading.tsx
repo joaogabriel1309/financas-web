@@ -33,10 +33,10 @@ export function StatCard({
   tone = 'neutral',
 }: {
   label: string;
-  value: number;
+  value: string | number;
   description: string;
   icon: IconName;
-  tone?: 'neutral' | 'green' | 'amber';
+  tone?: 'neutral' | 'green' | 'amber' | 'red';
 }) {
   return (
     <article className={`stat-card ${tone}`}>

@@ -146,6 +146,7 @@ function allowed(path: string[], method: string) {
       ? method === 'GET'
       : ['login', 'registrar', 'logout'].includes(id) && method === 'POST';
   }
+  if (resource === 'previsao') return path.length === 1 && method === 'GET';
   if (!['contas', 'receitas', 'formas-pagamento'].includes(resource))
     return false;
   if (path.length === 1) return ['GET', 'POST'].includes(method);
@@ -165,7 +166,7 @@ export async function handleBackend(request: NextRequest, path: string[]) {
   const route = path.join('/');
   const query = new URLSearchParams();
   if (
-    (['contas', 'receitas'].includes(path[0]) &&
+    (['contas', 'receitas', 'previsao'].includes(path[0]) &&
       method === 'GET') ||
     (path[0] === 'contas' && method === 'POST' && path.length === 2)
   ) {

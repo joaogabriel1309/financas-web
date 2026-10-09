@@ -1643,6 +1643,38 @@ button:disabled {
 }
 
 /* Receitas e previsão: mantém os componentes e o ritmo visual do dashboard. */
+.forecast-section {
+  margin-bottom: 30px;
+}
+.forecast-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.forecast-heading h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.forecast-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.forecast-section .stats-grid {
+  margin-bottom: 12px;
+  padding-bottom: 20px;
+}
+.forecast-section .form-hint {
+  max-width: 850px;
+}
+.stat-card.red .stat-value,
+.stat-card.red .stat-icon {
+  color: #b33131;
+}
 .income-create-page {
   max-width: 760px;
 }
