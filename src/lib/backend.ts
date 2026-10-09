@@ -146,7 +146,8 @@ function allowed(path: string[], method: string) {
       ? method === 'GET'
       : ['login', 'registrar', 'logout'].includes(id) && method === 'POST';
   }
-  if (!['contas', 'formas-pagamento'].includes(resource)) return false;
+  if (!['contas', 'receitas', 'formas-pagamento'].includes(resource))
+    return false;
   if (path.length === 1) return ['GET', 'POST'].includes(method);
   if (path.length !== 2 || !UUID.test(id)) return false;
   return resource === 'contas'
@@ -164,8 +165,9 @@ export async function handleBackend(request: NextRequest, path: string[]) {
   const route = path.join('/');
   const query = new URLSearchParams();
   if (
-    path[0] === 'contas' &&
-    (method === 'GET' || (method === 'POST' && path.length === 2))
+    (['contas', 'receitas'].includes(path[0]) &&
+      method === 'GET') ||
+    (path[0] === 'contas' && method === 'POST' && path.length === 2)
   ) {
     const meses = request.nextUrl.searchParams.getAll('mes');
     if (meses.length > 1)

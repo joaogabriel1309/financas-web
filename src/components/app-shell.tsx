@@ -11,6 +11,7 @@ import { useToast } from './toast-provider';
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: '/visao-geral', label: 'Visão geral', icon: 'chart' },
   { href: '/contas', label: 'Minhas contas', icon: 'wallet' },
+  { href: '/receitas', label: 'Receita', icon: 'banknote' },
   { href: '/formas-pagamento', label: 'Formas de pagamento', icon: 'card' },
 ];
 
@@ -31,7 +32,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ? 'Nova conta'
       : /^\/contas\/[^/]+\/editar$/.test(pathname)
         ? 'Editar conta'
-        : currentSection?.label;
+        : pathname === '/receitas/nova'
+          ? 'Nova receita'
+          : /^\/receitas\/[^/]+\/editar$/.test(pathname)
+            ? 'Editar receita'
+            : currentSection?.label;
 
   useEffect(() => {
     menu.current?.close();

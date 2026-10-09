@@ -11,7 +11,7 @@ export function MonthPicker({
   disabled = false,
 }: {
   mes: string;
-  pathname: '/contas' | '/visao-geral';
+  pathname: '/contas' | '/receitas' | '/visao-geral';
   disabled?: boolean;
 }) {
   const router = useRouter();
@@ -26,7 +26,7 @@ export function MonthPicker({
   return (
     <section
       className="month-picker panel"
-      aria-label="Selecionar mês das contas"
+      aria-label="Selecionar mês de referência"
       aria-busy={pending}
     >
       <div>

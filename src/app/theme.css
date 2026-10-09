@@ -1641,3 +1641,13 @@ button:disabled {
     width: 0;
   }
 }
+
+/* Receitas e previsão: mantém os componentes e o ritmo visual do dashboard. */
+.income-create-page {
+  max-width: 760px;
+}
+.income-type {
+  display: inline-flex;
+  color: var(--muted);
+  font-size: 12px;
+}

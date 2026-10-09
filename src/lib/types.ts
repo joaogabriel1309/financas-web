@@ -6,6 +6,16 @@ export interface Usuario {
   updatedAt: string;
 }
 
+export interface Receita {
+  id: string;
+  nome: string;
+  valor: string | number;
+  mesReferencia: string;
+  recorrencia: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Sessao {
   accessToken: string;
   refreshToken: string;
