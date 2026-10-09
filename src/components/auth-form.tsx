@@ -51,42 +51,30 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       <section className="auth-story">
         <Brand />
         <div className="auth-story-content">
-          <span className="eyebrow light">
-            LEVEZA PARA A SUA VIDA FINANCEIRA
-          </span>
+          <span className="eyebrow light">CONTROLE FINANCEIRO PESSOAL</span>
           <h1>
-            Mais controle.
+            Suas contas.
             <br />
-            Menos <em>preocupação.</em>
+            Tudo <em>em ordem.</em>
           </h1>
-          <p>
-            Um lugar para organizar suas contas e enxergar suas escolhas com
-            mais clareza.
-          </p>
-          <div className="auth-illustration" aria-hidden="true">
-            <div className="illustration-orbit" />
-            <div className="illustration-card">
-              <Icon name="wallet" size={48} />
-              <span>
-                Pequenos passos.
-                <br />
-                <strong>Grandes mudanças.</strong>
-              </span>
-              <div className="illustration-bars">
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-            </div>
-            <span className="illustration-check">
-              <Icon name="check" size={28} />
-            </span>
-          </div>
+          <p>Acompanhe vencimentos, pagamentos e despesas em um só lugar.</p>
+          <ul className="auth-feature-list">
+            <li>
+              <Icon name="wallet" size={18} />
+              Contas organizadas por mês
+            </li>
+            <li>
+              <Icon name="clock" size={18} />
+              Vencimentos e parcelas à vista
+            </li>
+            <li>
+              <Icon name="check" size={18} />
+              Histórico de pagamentos
+            </li>
+          </ul>
         </div>
         <span className="auth-story-footer">
-          Seu próximo passo começa aqui.
+          Finanças pessoais, sem complicação.
         </span>
       </section>
       <section className="auth-form-section">
@@ -95,11 +83,11 @@ export function AuthForm({ register = false }: { register?: boolean }) {
         </div>
         <div className="auth-form-content">
           <span className="eyebrow">SEU ESPAÇO FINANCEIRO</span>
-          <h2>{register ? 'Comece com clareza.' : 'Que bom ter você aqui.'}</h2>
+          <h2>{register ? 'Criar conta' : 'Entrar'}</h2>
           <p className="auth-subtitle">
             {register
-              ? 'Crie sua conta e dê o primeiro passo para se organizar.'
-              : 'Entre na sua conta para continuar de onde parou.'}
+              ? 'Preencha seus dados para começar.'
+              : 'Informe seu usuário e senha para acessar suas contas.'}
           </p>
           <form className="form-stack" onSubmit={submit}>
             {register && (
@@ -163,7 +151,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 </>
               ) : (
                 <>
-                  {register ? 'Criar minha conta' : 'Entrar na minha conta'}
+                  {register ? 'Criar conta' : 'Entrar'}
                   <Icon name="arrow" />
                 </>
               )}
@@ -180,9 +168,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             <span>Um espaço só seu, protegido por senha.</span>
           </div>
         </div>
-        <span className="auth-bottom">
-          Finanças organizadas. Mente tranquila.
-        </span>
+        <span className="auth-bottom">Finanças · Controle pessoal</span>
       </section>
     </main>
   );

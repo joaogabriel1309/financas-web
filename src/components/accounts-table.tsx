@@ -66,7 +66,7 @@ export function AccountsTable({
   }
   return (
     <div className="table-scroll">
-      <table className="accounts-table">
+      <table className="accounts-table" role="table">
         <thead>
           <tr>
             {onSelectionChange && (
@@ -145,7 +145,7 @@ export function AccountsTable({
                   />
                 </td>
               )}
-              <td>
+              <td className="account-name-cell">
                 <div className="account-name">
                   <span className={`account-icon ${conta.pago ? 'paid' : ''}`}>
                     <Icon name={obterIconeConta(conta.icone)} size={18} />
@@ -174,7 +174,10 @@ export function AccountsTable({
                   </span>
                 </div>
               </td>
-              <td>
+              <td
+                className="account-method-cell"
+                data-label="Forma de pagamento"
+              >
                 {onPaymentMethodChange ? (
                   <div className="table-method-field">
                     <PaymentMethodSelect
@@ -204,7 +207,7 @@ export function AccountsTable({
                   <span className="muted">Não informada</span>
                 )}
               </td>
-              <td>
+              <td className="account-status-cell">
                 <AccountDueStatus conta={conta} />
               </td>
               <td className="align-right amount-cell">
@@ -228,7 +231,7 @@ export function AccountsTable({
                 )}
               </td>
               {actions && (
-                <td>
+                <td className="account-actions-cell">
                   <div className="row-actions">
                     {onPay && !conta.pago && (
                       <button

@@ -176,7 +176,12 @@ export function Accounts({ mes }: { mes: string }) {
 
   return (
     <>
-      <h1 className="sr-only">Minhas contas</h1>
+      <div className="page-heading">
+        <div>
+          <h1>Minhas contas</h1>
+          <p>Acompanhe vencimentos e registre pagamentos.</p>
+        </div>
+      </div>
       <MonthPicker
         mes={mes}
         pathname="/contas"

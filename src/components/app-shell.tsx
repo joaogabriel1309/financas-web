@@ -112,7 +112,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <div className="drawer-body">
-          <div className="navigation-label">Favoritos</div>
+          <div className="navigation-label">Navegação</div>
           <nav aria-label="Navegação principal">
             {navigation.map((item) => (
               <Link
@@ -136,13 +136,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="sidebar-note">
-            <span className="sidebar-note-icon">
-              <Icon name="shield" size={24} />
-            </span>
-            <h3>Um passo de cada vez.</h3>
-            <p>Cuidar das suas finanças começa com pequenas escolhas.</p>
-          </div>
         </div>
       </dialog>
       <div className="main-area">
@@ -167,6 +160,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Brand />
           </Link>
+          <nav className="header-navigation" aria-label="Navegação principal">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={
+                  currentSection?.href === item.href ? 'page' : undefined
+                }
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
           <span className="header-page-name">{currentPage}</span>
           <div
             className="header-profile"
@@ -193,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         <footer className="page-footer">
-          <span>Organize hoje. Respire melhor amanhã.</span>
+          <span>Seu controle financeiro</span>
           <span>finanças.</span>
         </footer>
       </div>

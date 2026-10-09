@@ -104,7 +104,12 @@ export function PaymentMethods() {
 
   return (
     <>
-      <h1 className="sr-only">Formas de pagamento</h1>
+      <div className="page-heading">
+        <div>
+          <h1>Formas de pagamento</h1>
+          <p>Gerencie as opções usadas nas suas contas.</p>
+        </div>
+      </div>
       <ErrorMessage message={error} />
       {error && (
         <button

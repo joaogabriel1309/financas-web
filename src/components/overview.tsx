@@ -32,7 +32,16 @@ export function Overview({ mes }: { mes: string }) {
 
   return (
     <>
-      <h1 className="sr-only">Visão geral</h1>
+      <div className="page-heading">
+        <div>
+          <h1>Visão geral</h1>
+          <p>Totais e pagamentos do mês selecionado.</p>
+        </div>
+        <Link href={`/contas/nova?mes=${mes}`} className="button primary">
+          <Icon name="plus" size={18} />
+          Nova conta
+        </Link>
+      </div>
       <MonthPicker mes={mes} pathname="/visao-geral" />
       <ErrorMessage message={error} />
       {error && (
@@ -87,7 +96,7 @@ export function Overview({ mes }: { mes: string }) {
                   <AccountsTable contas={all.slice(0, 5)} />
                 ) : (
                   <EmptyState
-                    title="Seu novo começo está aqui"
+                    title="Nenhuma conta neste mês"
                     description="Cadastre a primeira conta e acompanhe seus pagamentos em um só lugar."
                   >
                     <Link
@@ -103,8 +112,8 @@ export function Overview({ mes }: { mes: string }) {
               <section className="panel progress-panel">
                 <div className="panel-heading">
                   <div>
-                    <h2>Seu progresso</h2>
-                    <p>Uma conta de cada vez.</p>
+                    <h2>Pagamentos</h2>
+                    <p>Status do mês selecionado.</p>
                   </div>
                 </div>
                 <div
@@ -135,28 +144,12 @@ export function Overview({ mes }: { mes: string }) {
                 </div>
                 <p className="progress-note">
                   {all.length === 0
-                    ? 'Seu progresso aparecerá ao cadastrar a primeira conta.'
+                    ? 'Pagamentos aparecerá ao cadastrar a primeira conta.'
                     : progress === 100
-                      ? 'Tudo em dia. Aproveite essa tranquilidade!'
-                      : 'Cada pagamento é um passo para uma rotina mais tranquila.'}
+                      ? 'Todas as contas deste mês estão pagas.'
+                      : 'Consulte as contas em aberto para registrar os próximos pagamentos.'}
                 </p>
               </section>
-            </div>
-            <div className="insight-banner">
-              <span className="insight-icon">
-                <Icon name="shield" size={25} />
-              </span>
-              <div>
-                <h3>Organização é o primeiro passo.</h3>
-                <p>
-                  Registre suas contas e acompanhe o que já foi pago. O resto
-                  fica mais leve.
-                </p>
-              </div>
-              <Link href="/formas-pagamento" className="text-link">
-                Minhas formas de pagamento
-                <Icon name="arrow" size={18} />
-              </Link>
             </div>
           </>
         )
