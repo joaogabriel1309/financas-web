@@ -1658,12 +1658,6 @@ button:disabled {
   font-size: 16px;
   font-weight: 600;
 }
-.forecast-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
 .forecast-section .stats-grid {
   margin-bottom: 12px;
   padding-bottom: 20px;

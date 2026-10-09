@@ -38,10 +38,6 @@ export function Overview({ mes }: { mes: string }) {
           <h1>Visão geral</h1>
           <p>Previsão de entradas, despesas e pagamentos do mês selecionado.</p>
         </div>
-        <Link href={`/contas/nova?mes=${mes}`} className="button primary">
-          <Icon name="plus" size={18} />
-          Nova conta
-        </Link>
       </div>
       <MonthPicker mes={mes} pathname="/visao-geral" />
       <MonthlyForecast key={mes} mes={mes} />

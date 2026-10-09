@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useResource } from '@/lib/use-resource';
 import { useDueDateRefresh } from '@/lib/use-due-date-refresh';
 import type { PrevisaoMensal } from '@/lib/types';
@@ -20,15 +19,6 @@ export function MonthlyForecast({ mes }: { mes: string }) {
     <section className="forecast-section" aria-labelledby="forecast-heading">
       <div className="forecast-heading">
         <h2 id="forecast-heading">Previsão do mês</h2>
-        <div className="forecast-actions">
-          <Link className="text-link" href={`/receitas?mes=${mes}`}>
-            Gerenciar receitas <Icon name="arrow" size={16} />
-          </Link>
-          <Link className="button secondary" href={`/receitas/nova?mes=${mes}`}>
-            <Icon name="plus" size={16} />
-            Nova receita
-          </Link>
-        </div>
       </div>
       <ErrorMessage message={error} />
       {error && (
