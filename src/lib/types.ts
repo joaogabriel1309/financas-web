@@ -23,6 +23,11 @@ export interface PrevisaoMensal {
   saldoPrevisto: string;
   quantidadeReceitas: number;
   quantidadeContas: number;
+  dividasEmAberto: string;
+  quantidadeContasComDivida: number;
+  mesAtualDividas: string;
+  custoFixoMensal: string;
+  quantidadeContasRecorrentes: number;
 }
 
 export interface Sessao {

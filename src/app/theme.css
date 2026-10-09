@@ -1683,3 +1683,16 @@ button:disabled {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Dívidas e custo recorrente, separados da previsão do mês. */
+.financial-indicators {
+  margin-top: 28px;
+}
+.financial-indicators-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .financial-indicators-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

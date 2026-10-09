@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useResource } from '@/lib/use-resource';
 import { useDueDateRefresh } from '@/lib/use-due-date-refresh';
 import type { PrevisaoMensal } from '@/lib/types';
+import { rotuloMes } from '@/lib/months';
 import { StatCard } from './page-heading';
 import { ErrorMessage, LoadingState } from './modal';
 import { Icon } from './icon';
@@ -78,6 +79,35 @@ export function MonthlyForecast({ mes }: { mes: string }) {
               Receitas previstas menos todas as despesas do mês. Não é saldo
               bancário e não acumula valores de meses anteriores.
             </p>
+            <section
+              className="financial-indicators"
+              aria-labelledby="financial-indicators-heading"
+            >
+              <div className="forecast-heading">
+                <h2 id="financial-indicators-heading">Compromissos financeiros</h2>
+              </div>
+              <div className="stats-grid financial-indicators-grid">
+                <StatCard
+                  label="Dívidas em aberto"
+                  value={data.dividasEmAberto}
+                  description={`${data.quantidadeContasComDivida} conta${data.quantidadeContasComDivida === 1 ? '' : 's'} com pagamentos pendentes, sem depender do mês selecionado`}
+                  icon="loan"
+                  tone="amber"
+                />
+                <StatCard
+                  label="Custo fixo mensal"
+                  value={data.custoFixoMensal}
+                  description={`${data.quantidadeContasRecorrentes} conta${data.quantidadeContasRecorrentes === 1 ? '' : 's'} recorrente${data.quantidadeContasRecorrentes === 1 ? '' : 's'} em ${rotuloMes(data.mes)}, incluindo pagas e em aberto`}
+                  icon="home"
+                />
+              </div>
+              <p className="form-hint">
+                Dívidas incluem parcelas e contas avulsas não pagas de todos os
+                meses, inclusive futuras, e recorrências pendentes até{' '}
+                {rotuloMes(data.mesAtualDividas)}. O custo fixo considera somente
+                recorrências do mês selecionado, sem parcelas ou contas avulsas.
+              </p>
+            </section>
           </>
         )
       )}
