@@ -43,6 +43,7 @@ O endereço padrão da API é `http://localhost:3000`. Para usar outro endereço
 - Data do vencimento junto ao nome e avisos coloridos “Vence hoje”, “Próxima do vencimento” (próximos três dias) e “Atrasada” na listagem e na visão geral. Contas pagas continuam exibindo “Paga”. O cálculo usa o fuso de Cuiabá.
 - Atualização dos status ao retornar à aba/janela e na virada do dia, sem interromper edições ou gravações. A seleção das contas e os filtros são mantidos.
 - Pagamento separado para cada mês; excluir remove a conta de todos os meses após confirmação.
+- Desfazer pagamento pelo botão “Desfazer” nas contas pagas da listagem, com confirmação indicando conta e mês. Reabre somente aquela competência, remove a data do pagamento e recalcula os avisos de vencimento, preservando os outros meses e parcelas. Busca, filtros e totais acompanham a conta atualizada retornada pela API. Durante a gravação, os controles ficam bloqueados e não há alteração visual antes da confirmação do servidor; falhas permanecem no diálogo para nova tentativa.
 - Cadastro, busca, edição e exclusão de formas de pagamento, com cor personalizada e ícone.
 - Seletores visuais de formas de pagamento no cadastro e na listagem de contas: mostram nome, cor e ícone, com navegação por teclado e salvamento automático na tabela.
 - Seleção opcional de uma forma de pagamento no cadastro da conta, com exibição na tabela. O vínculo vale para todos os meses e parcelas; excluir a forma mantém as contas e seus pagamentos sem o vínculo.

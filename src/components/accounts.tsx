@@ -19,7 +19,7 @@ import {
 } from '@/lib/account-payment-method';
 import { aplicarValorConta, salvarValorConta } from '@/lib/account-value';
 
-type Action = { type: 'pay' | 'delete'; conta: Conta };
+type Action = { type: 'pay' | 'undo-pay' | 'delete'; conta: Conta };
 
 export function Accounts({ mes }: { mes: string }) {
   const router = useRouter();
@@ -30,6 +30,7 @@ export function Accounts({ mes }: { mes: string }) {
   const formas = useResource<FormaPagamento[]>('/formas-pagamento');
   const [action, setAction] = useState<Action | null>(null);
   const [busy, setBusy] = useState(false);
+  const confirmingAction = useRef(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -64,37 +65,52 @@ export function Accounts({ mes }: { mes: string }) {
     ) / 100;
 
   function openAction(value: Action) {
+    if (busy || confirmingAction.current || action || editingValueId !== null)
+      return;
     setAction(value);
     setFormError(null);
   }
 
   async function confirm() {
-    if (!action || busy) return;
+    if (!action || busy || confirmingAction.current) return;
+    confirmingAction.current = true;
     setBusy(true);
     setFormError(null);
     try {
       const caminho =
         `/contas/${action.conta.id}` +
-        (action.type === 'pay' ? `?mes=${action.conta.mes}` : '');
-      await api<void>(caminho, {
-        method: action.type === 'pay' ? 'POST' : 'DELETE',
-      });
-      // Recarrega os dados para usar a data de pagamento registrada pelo servidor.
-      if (action.type === 'delete') {
-        setData(
-          (previous) =>
-            previous?.filter((conta) => conta.id !== action.conta.id) || [],
+        (action.type === 'undo-pay' ? '/pagamento' : '') +
+        (action.type !== 'delete' ? `?mes=${action.conta.mes}` : '');
+      if (action.type === 'undo-pay') {
+        const atualizada = await api<Conta>(caminho, { method: 'DELETE' });
+        // Usa também a data e o vencimento recalculados pelo servidor.
+        setData((previous) =>
+          previous?.map((conta) =>
+            conta.id === atualizada.id ? atualizada : conta,
+          ) || [],
         );
-        setSelectedIds((previous) => {
-          const next = new Set(previous);
-          next.delete(action.conta.id);
-          return next;
+      } else {
+        await api<void>(caminho, {
+          method: action.type === 'pay' ? 'POST' : 'DELETE',
         });
-      } else await reload();
+        if (action.type === 'delete') {
+          setData(
+            (previous) =>
+              previous?.filter((conta) => conta.id !== action.conta.id) || [],
+          );
+          setSelectedIds((previous) => {
+            const next = new Set(previous);
+            next.delete(action.conta.id);
+            return next;
+          });
+        } else await reload();
+      }
       toast.success(
         action.type === 'pay'
           ? 'Pagamento registrado com sucesso.'
-          : 'Conta excluída.',
+          : action.type === 'undo-pay'
+            ? `Pagamento desfeito em ${rotuloMes(action.conta.mes)}.`
+            : 'Conta excluída.',
       );
       setAction(null);
     } catch (error) {
@@ -104,6 +120,7 @@ export function Accounts({ mes }: { mes: string }) {
           : 'Não foi possível concluir a ação.',
       );
     } finally {
+      confirmingAction.current = false;
       setBusy(false);
     }
   }
@@ -280,6 +297,7 @@ export function Accounts({ mes }: { mes: string }) {
               selectedIds={selectedIds}
               onSelectionChange={(ids) => setSelectedIds(new Set(ids))}
               onPay={(conta) => openAction({ type: 'pay', conta })}
+              onUndoPayment={(conta) => openAction({ type: 'undo-pay', conta })}
               onDelete={(conta) => openAction({ type: 'delete', conta })}
               onEdit={(conta) =>
                 router.push(`/contas/${conta.id}/editar?mes=${mes}`)
@@ -382,12 +400,16 @@ export function Accounts({ mes }: { mes: string }) {
           title={
             action.type === 'pay'
               ? 'Registrar pagamento?'
-              : 'Excluir esta conta?'
+              : action.type === 'undo-pay'
+                ? 'Desfazer pagamento?'
+                : 'Excluir esta conta?'
           }
           description={
             action.type === 'pay'
               ? `Confirme o pagamento de ${action.conta.nome} em ${rotuloMes(action.conta.mes)}, no valor de ${moeda(action.conta.valor)}. Apenas este mês será marcado como pago.`
-              : `A conta “${action.conta.nome}” será excluída de todos os meses, incluindo parcelas e pagamentos registrados. Essa ação não pode ser desfeita.`
+              : action.type === 'undo-pay'
+                ? `O pagamento de “${action.conta.nome}” em ${rotuloMes(action.conta.mes)} será removido e a conta voltará a ficar em aberto neste mês. Os pagamentos de outros meses e parcelas serão mantidos.`
+                : `A conta “${action.conta.nome}” será excluída de todos os meses, incluindo parcelas e pagamentos registrados. Essa ação não pode ser desfeita.`
           }
           onClose={() => setAction(null)}
           busy={busy}
@@ -410,7 +432,9 @@ export function Accounts({ mes }: { mes: string }) {
                 ? 'Aguarde…'
                 : action.type === 'pay'
                   ? 'Confirmar pagamento'
-                  : 'Excluir conta'}
+                  : action.type === 'undo-pay'
+                    ? 'Desfazer pagamento'
+                    : 'Excluir conta'}
             </button>
           </div>
         </Modal>

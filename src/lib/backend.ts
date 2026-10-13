@@ -138,8 +138,8 @@ function allowed(path: string[], method: string) {
     return (
       resource === 'contas' &&
       UUID.test(id) &&
-      ['valor', 'dados'].includes(path[2]) &&
-      method === 'PATCH'
+      ((['valor', 'dados'].includes(path[2]) && method === 'PATCH') ||
+        (path[2] === 'pagamento' && method === 'DELETE'))
     );
   if (path.length === 2 && resource === 'auth') {
     return id === 'me'
@@ -168,7 +168,11 @@ export async function handleBackend(request: NextRequest, path: string[]) {
   if (
     (['contas', 'receitas', 'previsao'].includes(path[0]) &&
       method === 'GET') ||
-    (path[0] === 'contas' && method === 'POST' && path.length === 2)
+    (path[0] === 'contas' && method === 'POST' && path.length === 2) ||
+    (path[0] === 'contas' &&
+      path.length === 3 &&
+      path[2] === 'pagamento' &&
+      method === 'DELETE')
   ) {
     const meses = request.nextUrl.searchParams.getAll('mes');
     if (meses.length > 1)
