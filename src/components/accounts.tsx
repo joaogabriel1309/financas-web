@@ -18,6 +18,15 @@ import {
   salvarFormaPagamento,
 } from '@/lib/account-payment-method';
 import { aplicarValorConta, salvarValorConta } from '@/lib/account-value';
+import {
+  ALL_PAYMENT_METHODS,
+  UNASSIGNED_PAYMENT_METHOD,
+  moedaCentavos,
+  nomeResumoPagamento,
+  resumirFormasPagamento,
+  somarValoresContas,
+} from '@/lib/payment-method-summary';
+import { PaymentMethodSummary } from './payment-method-summary';
 
 type Action = { type: 'pay' | 'undo-pay' | 'delete'; conta: Conta };
 
@@ -34,6 +43,7 @@ export function Accounts({ mes }: { mes: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState(ALL_PAYMENT_METHODS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [methodChange, setMethodChange] = useState<{
     id: string;
@@ -48,7 +58,16 @@ export function Accounts({ mes }: { mes: string }) {
     loading || busy || action !== null || editingValueId !== null,
   );
   const all = data || [];
-  const filtered = all.filter(
+  const paymentSummary = resumirFormasPagamento(all, formas.data || []);
+  const paymentFilterName = paymentSummary.find(
+    (grupo) => grupo.id === paymentFilter,
+  );
+  const byPayment = all.filter(
+    (conta) =>
+      paymentFilter === ALL_PAYMENT_METHODS ||
+      (conta.formaPagamentoId ?? UNASSIGNED_PAYMENT_METHOD) === paymentFilter,
+  );
+  const filtered = byPayment.filter(
     (conta) =>
       conta.nome
         .toLocaleLowerCase('pt-BR')
@@ -58,11 +77,13 @@ export function Accounts({ mes }: { mes: string }) {
   const selectedAccounts = filtered.filter((conta) =>
     selectedIds.has(conta.id),
   );
-  const selectionTotal =
-    selectedAccounts.reduce(
-      (total, conta) => total + Math.round(Number(conta.valor) * 100),
-      0,
-    ) / 100;
+  const selectionTotal = somarValoresContas(selectedAccounts);
+
+  function changePaymentFilter(id: string) {
+    if (busy || action || editingValueId !== null) return;
+    setPaymentFilter(id);
+    setSelectedIds(new Set());
+  }
 
   function openAction(value: Action) {
     if (busy || confirmingAction.current || action || editingValueId !== null)
@@ -226,6 +247,15 @@ export function Accounts({ mes }: { mes: string }) {
           Tentar novamente
         </button>
       )}
+      {data && (
+        <PaymentMethodSummary
+          grupos={paymentSummary}
+          mes={mes}
+          selectedId={paymentFilter}
+          disabled={busy || !!action || editingValueId !== null}
+          onSelect={changePaymentFilter}
+        />
+      )}
       <section className="panel">
         <div className="accounts-toolbar">
           <div
@@ -234,16 +264,16 @@ export function Accounts({ mes }: { mes: string }) {
             aria-label="Filtrar contas por status"
           >
             {[
-              { id: 'all', label: 'Todas', count: all.length },
+              { id: 'all', label: 'Todas', count: byPayment.length },
               {
                 id: 'pending',
                 label: 'Em aberto',
-                count: all.filter((c) => !c.pago).length,
+                count: byPayment.filter((c) => !c.pago).length,
               },
               {
                 id: 'paid',
                 label: 'Pagas',
-                count: all.filter((c) => c.pago).length,
+                count: byPayment.filter((c) => c.pago).length,
               },
             ].map((tab) => (
               <button
@@ -287,6 +317,27 @@ export function Accounts({ mes }: { mes: string }) {
             </button>
           </div>
         </div>
+        {paymentFilter !== ALL_PAYMENT_METHODS && (
+          <div className="accounts-payment-filter">
+            <span role="status">
+              Forma de pagamento:{' '}
+              <strong>
+                {paymentFilterName
+                  ? nomeResumoPagamento(paymentFilterName)
+                  : 'Forma selecionada'}
+              </strong>
+            </span>
+            <button
+              type="button"
+              className="clear-account-selection"
+              disabled={busy || !!action || editingValueId !== null}
+              onClick={() => changePaymentFilter(ALL_PAYMENT_METHODS)}
+            >
+              <Icon name="close" size={13} />
+              Limpar filtro de forma
+            </button>
+          </div>
+        )}
         {loading ? (
           <LoadingState />
         ) : (
@@ -335,7 +386,7 @@ export function Accounts({ mes }: { mes: string }) {
               }
               description={
                 all.length
-                  ? 'Tente outro nome ou altere o filtro para ver mais resultados.'
+                  ? 'Tente outro nome ou altere os filtros de status e forma de pagamento para ver mais resultados.'
                   : 'Adicione uma conta para este mês ou selecione outro mês de referência.'
               }
             >
@@ -363,7 +414,7 @@ export function Accounts({ mes }: { mes: string }) {
                   <>
                     {selectedAccounts.length} selecionada
                     {selectedAccounts.length === 1 ? '' : 's'} · Soma
-                    <strong>{moeda(selectionTotal)}</strong>
+                    <strong>{moedaCentavos(selectionTotal)}</strong>
                   </>
                 ) : (
                   'Selecione contas para somar'
@@ -384,12 +435,7 @@ export function Accounts({ mes }: { mes: string }) {
             <span>
               Total listado{' '}
               <strong>
-                {moeda(
-                  filtered.reduce(
-                    (sum, conta) => sum + Math.round(Number(conta.valor) * 100),
-                    0,
-                  ) / 100,
-                )}
+                {moedaCentavos(somarValoresContas(filtered))}
               </strong>
             </span>
           </div>
