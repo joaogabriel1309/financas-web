@@ -134,6 +134,13 @@ function sameOrigin(request: NextRequest): boolean {
 
 function allowed(path: string[], method: string) {
   const [resource, id] = path;
+  if (resource === 'integracoes') {
+    return (
+      id === 'telegram' &&
+      ((path.length === 2 && ['GET', 'DELETE'].includes(method)) ||
+        (path.length === 3 && path[2] === 'vincular' && method === 'POST'))
+    );
+  }
   if (path.length === 3)
     return (
       resource === 'contas' &&
