@@ -570,3 +570,45 @@ test('falha de rede retorna mensagem útil sem apagar a sessão', async () => {
   assert.equal(response.headers.get('set-cookie'), null);
   assert.match((await response.json()).message, /conectar à API/);
 });
+
+test('produção usa Secure por padrão e permite HTTP somente com opção explícita', async () => {
+  const originalMode = process.env.NODE_ENV;
+  const originalSecure = process.env.COOKIE_SECURE;
+  try {
+    Object.assign(process.env, { NODE_ENV: 'production' });
+    for (const value of [undefined, 'true', 'false']) {
+      if (value === undefined) delete process.env.COOKIE_SECURE;
+      else process.env.COOKIE_SECURE = value;
+      globalThis.fetch = async () => Response.json(session);
+      const response = await handleBackend(
+        request('auth/login', {
+          method: 'POST',
+          body: { login: 'teste', senha: 'senha-teste' },
+        }),
+        ['auth', 'login'],
+      );
+      assert.equal(response.status, 200);
+      for (const name of [ACCESS_COOKIE, REFRESH_COOKIE]) {
+        assert.equal(response.cookies.get(name)?.secure, value !== 'false');
+        assert.equal(response.cookies.get(name)?.httpOnly, true);
+      }
+      const logout = await handleBackend(
+        request('auth/logout', {
+          method: 'POST',
+          refresh: 'refresh-cookie-test',
+        }),
+        ['auth', 'logout'],
+      );
+      assert.equal(
+        logout.cookies.get(REFRESH_COOKIE)?.secure,
+        value !== 'false',
+      );
+      assert.equal(logout.cookies.get(REFRESH_COOKIE)?.maxAge, 0);
+    }
+  } finally {
+    if (originalMode === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
+    else Object.assign(process.env, { NODE_ENV: originalMode });
+    if (originalSecure === undefined) delete process.env.COOKIE_SECURE;
+    else process.env.COOKIE_SECURE = originalSecure;
+  }
+});
