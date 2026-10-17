@@ -571,44 +571,120 @@ test('falha de rede retorna mensagem útil sem apagar a sessão', async () => {
   assert.match((await response.json()).message, /conectar à API/);
 });
 
-test('produção usa Secure por padrão e permite HTTP somente com opção explícita', async () => {
-  const originalMode = process.env.NODE_ENV;
-  const originalSecure = process.env.COOKIE_SECURE;
-  try {
-    Object.assign(process.env, { NODE_ENV: 'production' });
-    for (const value of [undefined, 'true', 'false']) {
-      if (value === undefined) delete process.env.COOKIE_SECURE;
-      else process.env.COOKIE_SECURE = value;
-      globalThis.fetch = async () => Response.json(session);
-      const response = await handleBackend(
-        request('auth/login', {
-          method: 'POST',
-          body: { login: 'teste', senha: 'senha-teste' },
-        }),
-        ['auth', 'login'],
-      );
-      assert.equal(response.status, 200);
-      for (const name of [ACCESS_COOKIE, REFRESH_COOKIE]) {
-        assert.equal(response.cookies.get(name)?.secure, value !== 'false');
-        assert.equal(response.cookies.get(name)?.httpOnly, true);
-      }
-      const logout = await handleBackend(
-        request('auth/logout', {
-          method: 'POST',
-          refresh: 'refresh-cookie-test',
-        }),
-        ['auth', 'logout'],
-      );
+test('Telegram encaminha status, vínculo e desconexão autenticados', async () => {
+  for (const [path, method, payload, status] of [
+    [
+      ['integracoes', 'telegram'],
+      'GET',
+      { conectado: false, criadoEm: null },
+      200,
+    ],
+    [
+      ['integracoes', 'telegram', 'vincular'],
+      'POST',
+      {
+        url: 'https://t.me/test_bot?start=codigo',
+        expiresAt: '2027-01-01T00:00:00Z',
+      },
+      201,
+    ],
+    [['integracoes', 'telegram'], 'DELETE', null, 204],
+  ] as const) {
+    globalThis.fetch = async (input, options) => {
+      assert.equal(new URL(String(input)).pathname, '/' + path.join('/'));
+      assert.equal(new URL(String(input)).search, '');
+      assert.equal(options?.method, method);
       assert.equal(
-        logout.cookies.get(REFRESH_COOKIE)?.secure,
-        value !== 'false',
+        new Headers(options?.headers).get('authorization'),
+        'Bearer telegram-access',
       );
-      assert.equal(logout.cookies.get(REFRESH_COOKIE)?.maxAge, 0);
-    }
-  } finally {
-    if (originalMode === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
-    else Object.assign(process.env, { NODE_ENV: originalMode });
-    if (originalSecure === undefined) delete process.env.COOKIE_SECURE;
-    else process.env.COOKIE_SECURE = originalSecure;
+      return status === 204
+        ? new Response(null, { status })
+        : Response.json(payload, { status });
+    };
+    const response = await handleBackend(
+      request(path.join('/') + '?ignorado=1', {
+        method,
+        access: 'telegram-access',
+      }),
+      [...path],
+    );
+    assert.equal(response.status, status);
+    if (status !== 204) assert.deepEqual(await response.json(), payload);
   }
+});
+
+test('Telegram bloqueia chamadas sem sessão, outra origem e rotas fora da lista', async () => {
+  globalThis.fetch = async () => {
+    assert.fail('A API não deveria ser chamada');
+  };
+  assert.equal(
+    (
+      await handleBackend(request('integracoes/telegram'), [
+        'integracoes',
+        'telegram',
+      ])
+    ).status,
+    401,
+  );
+  assert.equal(
+    (
+      await handleBackend(
+        request('integracoes/telegram/vincular', {
+          method: 'POST',
+          access: 'token',
+          origin: 'https://outro.example',
+        }),
+        ['integracoes', 'telegram', 'vincular'],
+      )
+    ).status,
+    403,
+  );
+  for (const [path, method] of [
+    [['integracoes', 'telegram'], 'POST'],
+    [['integracoes', 'telegram', 'vincular'], 'GET'],
+    [['integracoes', 'telegram', 'vincular'], 'DELETE'],
+    [['integracoes', 'telegram', 'segredo'], 'POST'],
+    [['integracoes', 'outro'], 'GET'],
+    [['integracoes', 'telegram', 'vincular', 'extra'], 'POST'],
+  ]) {
+    assert.equal(
+      (
+        await handleBackend(
+          request((path as string[]).join('/'), {
+            method: method as string,
+            access: 'token',
+          }),
+          path as string[],
+        )
+      ).status,
+      404,
+    );
+  }
+});
+
+test('Telegram renova a sessão antes de gerar o link', async () => {
+  let generated = 0;
+  globalThis.fetch = async (input, options) => {
+    if (String(input).endsWith('/auth/refresh')) return Response.json(session);
+    if (
+      new Headers(options?.headers).get('authorization') ===
+      'Bearer expired-telegram'
+    )
+      return new Response(null, { status: 401 });
+    assert.equal(options?.method, 'POST');
+    generated++;
+    return Response.json({ url: 'link', expiresAt: 'data' }, { status: 201 });
+  };
+  const response = await handleBackend(
+    request('integracoes/telegram/vincular', {
+      method: 'POST',
+      access: 'expired-telegram',
+      refresh: 'telegram-refresh-unique',
+    }),
+    ['integracoes', 'telegram', 'vincular'],
+  );
+  assert.equal(response.status, 201);
+  assert.equal(generated, 1);
+  assert.equal(response.cookies.get(REFRESH_COOKIE)?.value, 'new-refresh');
 });

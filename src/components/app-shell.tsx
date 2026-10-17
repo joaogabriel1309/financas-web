@@ -13,6 +13,7 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: '/contas', label: 'Minhas contas', icon: 'wallet' },
   { href: '/receitas', label: 'Receita', icon: 'banknote' },
   { href: '/formas-pagamento', label: 'Formas de pagamento', icon: 'card' },
+  { href: '/integracoes', label: 'Integrações', icon: 'telegram' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

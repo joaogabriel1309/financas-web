@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type IconName =
+  | 'telegram'
   | 'menu'
   | 'chart'
   | 'wallet'
@@ -38,6 +39,12 @@ export type IconName =
   | 'refresh';
 
 const paths: Record<IconName, React.ReactNode> = {
+  telegram: (
+    <>
+      <path d="m21 3-4 18-6-6-4 3 1-6L21 3 3 10l5 2" />
+      <path d="m8 12 9-5-6 8" />
+    </>
+  ),
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   chart: (
     <>
