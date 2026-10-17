@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.env*
+coverage
+.agents
+.codex
+.aws
+*.log
+*.tsbuildinfo
+next-env.d.ts

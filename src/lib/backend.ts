@@ -18,7 +18,10 @@ function expireSession(response: NextResponse) {
     response.cookies.set(name, '', {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure:
+        process.env.COOKIE_SECURE === 'false'
+          ? false
+          : process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 0,
     });
@@ -41,7 +44,10 @@ function saveSession(response: NextResponse, session: Sessao) {
   const options = {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    secure:
+      process.env.COOKIE_SECURE === 'false'
+        ? false
+        : process.env.NODE_ENV === 'production',
     path: '/',
     maxAge,
   };
@@ -134,6 +140,13 @@ function sameOrigin(request: NextRequest): boolean {
 
 function allowed(path: string[], method: string) {
   const [resource, id] = path;
+  if (resource === 'integracoes') {
+    return (
+      id === 'telegram' &&
+      ((path.length === 2 && ['GET', 'DELETE'].includes(method)) ||
+        (path.length === 3 && path[2] === 'vincular' && method === 'POST'))
+    );
+  }
   if (path.length === 3)
     return (
       resource === 'contas' &&
